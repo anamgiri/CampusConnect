@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login</title>
     <link href="https://unpkg.com/boxicons@2.1.4/css/boxicons.min.css" rel="stylesheet">
+     
+    
     <style>
         @import url('https://fonts.googleapis.com/css2?family=poppins');
 
@@ -14,6 +16,25 @@
             box-sizing: border-box;
             font-family: "poppins";
             color: #fff;
+        }
+        #error_message{
+            background-color: rgb(215, 0, 0);
+            box-shadow: rgb(0, 0, 0);
+             justify-content: center;
+             text-align: center;
+             margin-right: 40%;
+             border-top: #2727ff;
+             border-bottom: #25252b;
+             text-shadow: #25252b;
+             visibility: hidden;    
+             top: inherit;
+             left: 0;
+             position: inherit;
+             width: inherit;
+             z-index: 9;
+             padding: .5%;
+             font-size: large;             
+            
         }
         body{
             display: flex;
@@ -26,9 +47,10 @@
             position: relative;
             width: 750px;
             height: 450px;
-            border: 2px solid #ff2770;
-            box-shadow: 0 0 25px #ff2770;
+            border: 2px solid #043bb1;
             overflow: hidden;
+            z-index: 4;
+      
         }
         .container .form-box{
             position: absolute;
@@ -38,10 +60,12 @@
             display: flex;
             justify-content: center;
             flex-direction: column;
+            z-index: 3;
         }
         .form-box.Login{
             left: 0px;
             padding: 0 40px;
+            z-index: 1;
         }
         .form-box h2{
             font-size: 32px;
@@ -74,7 +98,7 @@
         }
         .input-box input:focus,
         .input-box input:valid{
-            border-bottom: 2px solid #ff2770;
+            border-bottom: 2px solid #1cc9f4;
         }
         .input-box label{
             position: absolute;
@@ -88,7 +112,7 @@
         .input-box input:focus ~i,
         .input-box input:valid ~i{
             top: -5px;
-            color: #ff2770;
+            color: #2f08e1;
         }
         .input-box i{
             position: absolute;
@@ -100,7 +124,7 @@
         }
         .input-box input:focus ~i,
         .input-box input:valid ~i{
-            color: #ff2770;
+            color: #0010eb;
         }
         .btn{
             position: relative;
@@ -112,37 +136,31 @@
             cursor: pointer;
             font-size: 16px;
             font-weight: 600;
-            border: 2px solid #ff2770;
+            border: 2px solid #0059ff;
             overflow: hidden;
             z-index: 1;
         }
-        .btn::before{
-            content:"";
-            position: absolute;
-            height: 100%;
-            width: 100%;
-            background: linear-gradient(#25252b, #ff2770, #25252b, #ff2770);
-            top: -100%;
-            left: 0;
-            z-index: -1;
-            transition: .5s;
-    
-        }
-        .btn:hover:before{
-            top:0;
+      
+        .btn:hover{
+            background: blue;
+       
         }
         .regi-link{
-            font-size: 14px;
+            font-size: 18px;
             text-align: center;
             margin: 20px 0 10px;
+            margin-top: 11%;
         }
         .regi-link a{
             text-decoration: none;
-            color: #ff2770;
+            color: #57ebff;
             font-weight: 600;
+            text-underline-offset: 1 ;
+            
         }
         .regi-link a:hover{
             text-decoration: underline;
+            animation:forwards;
         }
         .info-content{
             position: absolute;
@@ -166,23 +184,14 @@
         .info-content p{
             font-size: 16px;
         }
-        .container .curved-shape{
-            position: absolute;
-            right: 0;
-            top: -5px;
-            height: 100%;
-            width: 140%;
-            background: linear-gradient(45deg, #25252b, #ff2770);
-            transform: rotate(10deg) skewY(40deg);
-            transform-origin: bottom right;
-        }
-        .thisonly{
-            margin-left: 30px;
-        }
+       
     </style>
 </head>
 <body>
+       
+    
     <div class="container">
+        <div id="error_message"> Opps, Some error occured !</div>
         <div class="curved-shape"></div>
         <div class="form-box Login">
             <h2>Login</h2>
@@ -195,7 +204,7 @@
                 <div class="input-box">
                     <label for="" class="input-box-text">Password</label>
                     <input type="password" name="password" id="password" required>
-                    <i class='bx bxs-lock-alt'></i>
+                    <i class= 'bx bxs-lock-alt'></i>
                 </div>
                 <div class="input-box">
                     <button class="btn" type="submit" value="Login">Login</button>
@@ -210,5 +219,26 @@
     </div>
         
     </div>
+
+
+    <script>
+        
+        const message = "{{ message }}";
+        const username =" {{ username }}";
+        const password = "{{ password }}";
+        if(username && password){
+        msg= document.getElementById('error_message')
+        msg.style.visibility = "visible";
+        document.getElementById("error_message").innerText = ` ${message}`;
+        setTimeout (() => {
+            msg.style.visibility = "hidden";
+        }, 3000);
+    }
+      </script>
+
+
 </body>
+
+
+
 </html>
