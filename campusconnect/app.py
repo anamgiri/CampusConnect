@@ -293,7 +293,9 @@ def index():
     return render_template('index.html')
 
 # Example: Register a new user
-@app.route('/register', methods=['GET', 'POST'])
+# Example: Register a new user
+# Example: Register a new user
+@app.route('/register',  methods=['GET' , 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
@@ -303,30 +305,85 @@ def register():
         # Check if the email already exists
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
-            return 'Email already exists. Please choose a different email.'
+            message = 'Email already exists. Please choose a different email.'
+            return render_template('register.html', message=message, username=username, password=password)
 
         # Check if the username already exists
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
-            return 'Username already exists. Please choose a different username.'
+            message = 'Username already exists. Please choose a different username.'
+            return render_template('register.html', message=message, username=username, password=password)
+        
+        emailVerify()
 
         # Create and save the new user
         new_user = User(username=username, email=email)
         new_user.set_password(password)  # Hash the password
         db.session.add(new_user)
+        
+       
         try:
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            return 'An error occurred while trying to register. Please try again.'
-
-        # Store both username and user_id in the session
+            message = 'An error occurred while trying to register. Please try again.'
+            return render_template('register.html', message=message, username=username, password=password)
+         # Store both username and user_id in the session
         session['username'] = username
         session['user_id'] = new_user.id  # Store user ID in the session
         session['friends'] = []  # Initialize friends list as empty for a new user
-        return redirect(url_for('public_feed'))
-
+        return render_template('verify.html')
     return render_template('register.html')
+
+
+
+def emailVerify():
+    code = random.randint(100000, 999999)
+    print(" \n \n \n \n code is : " + str(code) + " \n \n \n \n \n")
+    
+
+#  Sending Email for verification
+    smtp_port = 587
+    session['generated_code'] = code
+
+    sender_email = "campusconnect426@gmail.com"
+    receiver_email = request.form['email']  # Recipient's email address
+    password = "hxlt vkhr ibao fwfy"  #  gamil app-specific password
+    
+    print ( " \n  \n \n  "+  receiver_email  + " \n \n \n ")
+
+    subject = " Verfy your Account ( Campu connect )"
+    body = "your verification code is " +  str(code) +" please enter this code to verify your account"
+    text = f"Subject: {subject}\n\n{body}"
+    server = smtplib.SMTP("smtp.gmail.com", smtp_port)
+    server.starttls()
+    server.set_debuglevel(1)  # Show detailed connection info
+    server.login(sender_email, password)
+    server.sendmail(sender_email, receiver_email, text)
+    print("Email sent to:", receiver_email)
+    server.quit()
+    print("Quitiing the SMTP")
+
+    return redirect(url_for('verify'))
+
+
+
+@app.route('/verify' , methods = ['POST'])
+def verify():
+    render_template('verify.html')
+    sent_code = request.form['code']
+    generated_code =session.get('generated_code')
+    if sent_code == str(generated_code):
+
+          session.pop('verification_code', None)
+          return render_template("verify.html" , message = "Sucessfully validated")
+
+    else:
+          return render_template('verify.html' , message = "code did not match" )
+    
+
+
+
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -341,14 +398,17 @@ def login():
             session['user_id'] = user.id  # Store user ID in the session
             session['friends'] = [friend.username for friend in user.friends]  # Initialize friends list in session
             return redirect(url_for('public_feed'))  # Redirect to public feed instead of dashboard
-        else:
-            return 'Invalid credentials'
-
+        else :
+             message = "Opps ! \t Wrong Username or Password "
+             return  render_template('login.html', message=message , username = username  , password = password)
+        
     return render_template('login.html')
 
 
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
 
 @app.route('/profile', methods=['GET', 'POST'])
 def profile():
@@ -379,6 +439,166 @@ def profile():
         return render_template('profile.html', user=user, user_profile_pic=user_profile_pic)
     
     return redirect(url_for('login'))
+
+#Anam le lekheko profile_feed ko images ko lagi
+@app.route('/public_feed')
+def show_myimage():
+    if 'username' in session:
+        user = User.query.filter_by(username=session['username']).first()
+    else:
+        user = None  # If no user is logged in, set to None
+
+    notification = "notification.png"
+    inbox = "chaticon.png"
+    video = "videoicon.png"
+    search = "search.png"
+    friends = "friendsicon.png"
+    group = "servericon.png"
+    courses = "coursesicon.png"
+    notificationbell = "notificationbell.png"
+    webinar = "webinar.png"
+    chat = "inbox.png"
+    reels = "video.png"
+    homeicon = "homeicon.png"
+    profileicon = "profileicon.png"
+    helpersicon ="helpers.png"
+    ai = "ai.png"
+    scholarshipicon = "scholarshipicon.png"
+    photo = "photo.png"
+    livevideo = "live-video.png"
+    user_profile_pic = user.profile_pic if user and user.profile_pic else 'default.jpg'
+        
+    return render_template(
+        'public_feed.html',
+        user=user,
+        user_profile_pic=user_profile_pic,
+        notification=notification,
+        inbox=inbox,
+        video=video,
+        search=search,
+        friends = friends,
+        group = group,
+        courses = courses,
+        notificationbell = notificationbell,
+        webinar = webinar,
+        chat = chat,
+        reels = reels,
+        homeicon = homeicon,
+        profileicon = profileicon,
+        ai = ai,
+        helpersicon = helpersicon,
+        scholarshipicon = scholarshipicon,
+        photo = photo,
+        livevideo = livevideo,
+
+    )
+
+#Scholarship search
+@app.route('/scholarshipsearch')
+def scholarshipsearch():
+    if 'username' in session:
+        user = User.query.filter_by(username=session['username']).first()
+    else:
+        user = None
+
+    # Define all image variables
+    notification = "notification.png"
+    inbox = "chaticon.png"
+    video = "videoicon.png"
+    search = "search.png"
+    friends = "friendsicon.png"
+    group = "servericon.png"
+    courses = "coursesicon.png"
+    notificationbell = "notificationbell.png"
+    webinar = "webinar.png"
+    chat = "inbox.png"
+    reels = "video.png"
+    homeicon = "homeicon.png"
+    profileicon = "profileicon.png"
+    helpersicon = "helpers.png"
+    ai = "ai.png"
+    scholarshipicon = "scholarshipicon.png"
+    photo = "photo.png"
+    livevideo = "live-video.png"
+    user_profile_pic = user.profile_pic if user and user.profile_pic else 'default.jpg'
+        
+    return render_template(
+        'scholarshipsearch.html',
+        user=user,
+        user_profile_pic=user_profile_pic,
+        notification=notification,
+        inbox=inbox,
+        video=video,
+        search=search,
+        friends=friends,
+        group=group,
+        courses=courses,
+        notificationbell=notificationbell,
+        webinar=webinar,
+        chat=chat,
+        reels=reels,
+        homeicon=homeicon,
+        profileicon=profileicon,
+        ai=ai,
+        helpersicon=helpersicon,
+        scholarshipicon=scholarshipicon,
+        photo=photo,
+        livevideo=livevideo,
+    )
+
+@app.route('/<university_name>')
+def university_page(university_name):
+    # Check if the user is logged in and retrieve the user object
+    user = User.query.filter_by(username=session['username']).first() if 'username' in session else None
+    
+    # Default profile picture if the user does not have one
+    user_profile_pic = user.profile_pic if user and user.profile_pic else 'default.jpg'
+
+    # Asset dictionary to handle university-specific and common images
+    assets = {
+        "notification": "notification.png",
+        "inbox": "chaticon.png",
+        "video": "videoicon.png",
+        "search": "search.png",
+        "friends": "friendsicon.png",
+        "group": "servericon.png",
+        "courses": "coursesicon.png",
+        "notificationbell": "notificationbell.png",
+        "webinar": "webinar.png",
+        "chat": "inbox.png",
+        "reels": "video.png",
+        "homeicon": "homeicon.png",
+        "profileicon": "profileicon.png",
+        "helpersicon": "helpers.png",
+        "ai": "ai.png",
+        "scholarshipicon": "scholarshipicon.png",
+        "photo": "photo.png",
+        "livevideo": "live-video.png",
+    }
+
+
+    # Ensure the university name is correctly formatted for template rendering
+    if university_name.endswith('.html'):
+        university_name = university_name[:-5]  # Strip '.html' extension for safety
+
+    # Get the specific university image or a default one
+    university_image = f"{university_name}.jpeg"
+
+    harvarduniversity = "harvarduniversity.jpeg"
+    stanforduniversity = "stanforduniversity.jpeg"
+    texasstateuniversity = "texastateuniversity.jpeg"
+
+    # Render the template with context
+    return render_template(
+        f'{university_name}.html',
+        user=user,
+        user_profile_pic=user_profile_pic,
+        university_image=university_image,
+        harvarduniversity = harvarduniversity,
+        stanforduniversity = stanforduniversity,
+        texasstateuniversity = texasstateuniversity,
+        **assets  # Unpack assets to be used in the template
+    )
 
 
 
