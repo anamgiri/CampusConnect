@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPA and SAT Input</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            background-color: #f9f9f9;
+        }
+        .container {
+            position: relative;
+            max-width: 400px;
+            width: 90%;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            padding: 20px;
+        }
+        .close-btn, .skip-btn {
+            position: absolute;
+            border: none;
+            background: transparent;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        .close-btn {
+            top: 10px;
+            right: 10px;
+        }
+        .skip-btn {
+            justify-content: center;
+            display: flex;
+            margin-top: -5%;
+            margin-left: 80%;
+            border: #000000  solid 1px;
+            background-color: rgb(6, 193, 255);
+            color: #000000;
+            border-radius: 7px;
+
+        }
+        
+        .skip-btn:hover {
+          opacity: 70%;
+
+        }
+
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        .submit-btn {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            background: #007BFF;
+            color: white;
+            font-size: 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-bottom: 10%;
+        }
+        .submit-btn:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <button class="close-btn" onclick="window.close()">×</button>
+        <form method="POST" action="/add_info">
+            <div class="form-group">
+                <label for="gpa_9">GPA 9th Grade:</label>
+                <input type="number" id="gpa_9" name="gpa_9" step="0.01" min="0" max="4" required>
+            </div>
+            <div class="form-group">
+                <label for="gpa_10">GPA 10th Grade:</label>
+                <input type="number" id="gpa_10" name="gpa_10" step="0.01" min="0" max="4" required>
+            </div>
+            <div class="form-group">
+                <label for="gpa_11">GPA 11th Grade:</label>
+                <input type="number" id="gpa_11" name="gpa_11" step="0.01" min="0" max="4" required>
+            </div>
+            <div class="form-group">
+                <label for="gpa_12">GPA 12th Grade:</label>
+                <input type="number" id="gpa_12" name="gpa_12" step="0.01" min="0" max="4" required>
+            </div>
+            <div class="form-group">
+                <label for="sat_score">SAT Score:</label>
+                <input type="number" id="sat_score" name="sat_score" min="400" max="1600" required>
+            </div>
+            <button type="submit" class="submit-btn">Submit</button>
+        </form>
+        <button class="skip-btn" onclick="window.location.href='/public_feed'">Skip</button>
+    </div>
+</body>
+</html>
