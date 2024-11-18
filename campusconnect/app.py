@@ -383,6 +383,34 @@ def verify():
     
 
 
+@app.route('/add_info', methods=['GET', 'POST'])
+def add_info():
+    if request.method == 'POST':
+        # Proceed with processing form data
+        user = User.query.filter_by(username=session['username']).first()
+        
+        # Fetch data from the form
+        gpa_class_9 = request.form['gpa_9']
+        gpa_class_10 = request.form['gpa_10']
+        gpa_class_11 = request.form['gpa_11']
+        gpa_class_12 = request.form['gpa_12']
+        sat_score = request.form['sat_score']
+        
+        # Update user attributes
+        user.gpa_class_9 = gpa_class_9
+        user.gpa_class_10 = gpa_class_10
+        user.gpa_class_11 = gpa_class_11
+        user.gpa_class_12 = gpa_class_12
+        user.sat_score = sat_score
+        
+        # Commit changes to the database
+        db.session.commit()
+        
+        return redirect(url_for('public_feed')) 
+
+    # If GET request, render the form
+    return render_template('Add_info.html')
+
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -390,18 +418,40 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password']
+        
+        # Retrieve the user based on the username
         user = User.query.filter_by(username=username).first()
 
         if user and user.check_password(password):
-            # Store both username and user_id in the session
+            # Store username, user ID, and friends list in the session
             session['username'] = username
             session['user_id'] = user.id  # Store user ID in the session
             session['friends'] = [friend.username for friend in user.friends]  # Initialize friends list in session
-            return redirect(url_for('public_feed'))  # Redirect to public feed instead of dashboard
-        else :
-             message = "Opps ! \t Wrong Username or Password "
-             return  render_template('login.html', message=message , username = username  , password = password)
-        
+            
+            # Directly access GPA attributes from the user object
+            user_gpa_9 = user.gpa_class_9
+            user_gpa_10 = user.gpa_class_10
+            user_gpa_11 = user.gpa_class_11
+            user_gpa_12 = user.gpa_class_12
+            user_sat_score = user.sat_score
+            
+            # Check if any required fields are missing
+            if (
+                user_gpa_9 is None or 
+                user_gpa_10 is None or 
+                user_gpa_11 is None or 
+                user_gpa_12 is None or 
+                user_sat_score is None
+            ):
+                return redirect(url_for('add_info'))
+            else:
+                return redirect(url_for('public_feed'))  # Redirect to public feed instead of dashboard
+        else:
+            # If login fails, show an error message
+            message = "Oops! Wrong Username or Password."
+            return render_template('login.html', message=message, username=username, password=password)
+    
+    # Render the login page for GET requests
     return render_template('login.html')
 
 
@@ -435,8 +485,8 @@ def profile():
         
         # Assign a default profile picture if the user hasn't uploaded one
         user_profile_pic = user.profile_pic if user.profile_pic else 'default.jpg'
-        
-        return render_template('profile.html', user=user, user_profile_pic=user_profile_pic)
+        homeicon = "homeicon.png"
+        return render_template('profile.html', user=user, user_profile_pic=user_profile_pic , homeicon=homeicon)
     
     return redirect(url_for('login'))
 
