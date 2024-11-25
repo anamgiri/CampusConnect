@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Courses - CampusConnect</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            background-color: #f5f5f5;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #007bff;
+            color: white;
+        }
+        .header a {
+            color: white;
+            text-decoration: none;
+            padding: 8px 12px;
+            border-radius: 4px;
+        }
+        .header a:hover {
+            background-color: #0056b3;
+        }
+        .course-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        .course-card {
+            position: relative;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            transition: transform 0.2s;
+        }
+        .course-card:hover {
+            transform: translateY(-5px);
+        }
+        .course-card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+        .course-info {
+            padding: 15px;
+        }
+        .course-info h3 {
+            margin: 0;
+            font-size: 1.2em;
+        }
+        .course-info p {
+            color: #555;
+        }
+        .upload-button {
+            display: inline-block;
+            margin: 20px 0;
+            padding: 10px 20px;
+            background-color: #28a745;
+            color: white;
+            border-radius: 4px;
+            text-decoration: none;
+        }
+        .upload-button:hover {
+            background-color: #218838;
+        }
+        /* Dropdown menu styles */
+        .dropdown {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            cursor: pointer;
+        }
+        .dropdown-content {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 30px;
+            background-color: white;
+            min-width: 120px;
+            border-radius: 4px;
+            box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1;
+        }
+        .dropdown-content a {
+            color: black;
+            padding: 10px;
+            text-decoration: none;
+            display: block;
+        }
+        .dropdown-content a:hover {
+            background-color: #f1f1f1;
+        }
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const dropdowns = document.querySelectorAll(".dropdown");
+
+            dropdowns.forEach(dropdown => {
+                let timer;
+                const dropdownContent = dropdown.querySelector(".dropdown-content");
+
+                dropdown.addEventListener("mouseenter", () => {
+                    dropdownContent.style.display = "block";
+                });
+
+                dropdown.addEventListener("mouseleave", () => {
+                    // Set a delay of 3 seconds before hiding the dropdown
+                    timer = setTimeout(() => {
+                        dropdownContent.style.display = "none";
+                    }, 3000);
+                });
+
+                dropdownContent.addEventListener("mouseenter", () => {
+                    clearTimeout(timer); // Cancel the timer if the mouse enters the dropdown content
+                    dropdownContent.style.display = "block";
+                });
+
+                dropdownContent.addEventListener("mouseleave", () => {
+                    dropdownContent.style.display = "none"; // Hide when the mouse leaves the dropdown content
+                });
+            });
+        });
+    </script>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">CampusConnect</div>
+        <div>
+            <a href="{{ url_for('upload_course_video') }}" class="upload-button">Upload New Course</a>
+            <a href="{{ url_for('my_courses') }}">My Courses</a>
+        </div>
+    </div>
+    <div class="container">
+        <h2>Available Courses</h2>
+        {% if courses %}
+            <div class="course-list">
+                {% for course in courses %}
+                    <div class="course-card">
+                        <a href="{{ url_for('view_course', slug=course.slug) }}">
+                            <img src="{{ url_for('static', filename='courses_thumbnail/' + course.thumbnail) }}" alt="{{ course.title }}">
+                            <div class="course-info">
+                                <h3>{{ course.title }}</h3>
+                                <p>{{ course.description }}</p>
+                                <p><strong>Category:</strong> {{ course.category }}</p>
+                                <p><strong>Instructor:</strong> {{ course.uploader.username }}</p>
+                            </div>
+                        </a>
+                        <!-- Three dots dropdown menu -->
+                        <div class="dropdown">
+                            <i class="fas fa-ellipsis-v"></i>
+                            <div class="dropdown-content">
+                                <a href="{{ url_for('enroll_in_course', course_id=course.id) }}">Enroll</a>
+                                <a href="{{ url_for('enrolled_courses') }}">View Enrolled Courses</a>
+                                <a href="javascript:void(0);" onclick="copyLink('{{ course.slug }}')">Copy Link</a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <p>No courses available.</p>
+        {% endif %}
+    </div>
+
+<script>
+    function copyLink(courseSlug) {
+    const url = `${window.location.origin}/course/${courseSlug}`;
+    navigator.clipboard.writeText(url)
+        .then(() => alert('Course link copied to clipboard!'))
+        .catch(err => console.error('Failed to copy text: ', err));
+}
+
+    </script>
+</body>
+</html>

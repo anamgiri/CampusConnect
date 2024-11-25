@@ -1,12 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat with {{ chat_user.username }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <title>Edit Courses</title>
     <style>
-       body {
+         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: #efefef;
             margin: 0;
@@ -187,6 +184,39 @@
             width : 20px;
             margin-right : 10px;
         }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            font-weight: bold;
+        }
+        input[type="text"], textarea, select {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+        input[type="file"] {
+            margin-top: 5px;
+        }
+        button[type="submit"] {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button[type="button"] {
+            margin-top: 5px;
+            padding: 5px 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
         /* Media Queries for Responsiveness */
     @media (max-width: 768px) {
         /* Remove left and right sidebar for mobile/tablet */
@@ -318,7 +348,6 @@
             font-size: 12px;
         }
     }
-    
     </style>
 </head>
 <body>
@@ -327,7 +356,7 @@
             <div class="logo">UniRec</div>
             <ul>
                 <li><a href="{{ url_for('notifications') }}"><img src="{{ url_for('static', filename='images/' + notification) }}"></a></li>
-                 <li><a href="#"><img src="{{ url_for('static', filename='images/' + chat) }}"></a></li>
+                 <li><a href="{{ url_for('chat') }}"><img src="{{ url_for('static', filename='images/' + chat) }}"></a></li>
                 <li><a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + reels) }}"></a></li>
             
             </ul>
@@ -368,30 +397,106 @@
             <!-- Main Content: Video Feed -->
         <div class="main-content">
 
-                <div class="header">
-                    Chat with {{ chat_user.username }}
-                </div>
-            
-                <div class="chat-box" id="chat-box">
-                    {% for message in messages %}
-                        <p class="{{ 'sent' if message.sender.username == session['username'] else 'received' }}">
-                            <strong>{{ message.sender.username }}:</strong> {{ message.content }} 
-                            <em>({{ message.timestamp.strftime('%Y-%m-%d %H:%M:%S') }})</em>
-                        </p>
-                    {% endfor %}
-                </div>
-            
-                <div class="typing-indicator" id="typing-indicator">
-                    {{ chat_user.username }} is typing...
-                </div>
-            
-                <div class="form-container">
-                    <input type="text" name="message" id="messageInput" placeholder="Enter your message" required autocomplete="off">
-                    <button type="submit" id="sendButton">Send</button>
-                </div>
 
-            
+            <h2>Edit Course</h2>
+    <form action="{{ url_for('edit_course', slug=course.slug) }}" method="post" enctype="multipart/form-data">
+        
+        <!-- Course Information -->
+        <div class="form-group">
+            <label>Course Title:</label>
+            <input type="text" name="title" value="{{ course.title }}">
         </div>
+        <div class="form-group">
+            <label>Course Description:</label>
+            <textarea name="description">{{ course.description }}</textarea>
+        </div>
+        <div class="form-group">
+            <label>Category:</label>
+            <select name="category">
+                <option value="">Select Category</option>
+                <option value="Science" {% if course.category == 'Science' %}selected{% endif %}>Science</option>
+                <option value="Math" {% if course.category == 'Math' %}selected{% endif %}>Math</option>
+                <option value="Technology" {% if course.category == 'Technology' %}selected{% endif %}>Technology</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Change Course Thumbnail:</label>
+            <input type="file" name="thumbnail" accept="image/*">
+        </div>
+
+        <!-- Course Videos -->
+        <h3>Course Videos</h3>
+        {% for video in course.videos %}
+            <div class="form-group" id="video-{{ video.id }}">
+                <input type="hidden" name="video_id[]" value="{{ video.id }}">
+                <label>Video Title:</label>
+                <input type="text" name="video_title[]" value="{{ video.title }}">
+                <label>Video Description:</label>
+                <textarea name="video_description[]">{{ video.description }}</textarea>
+                <label>Change Video File:</label>
+                <input type="file" name="video_file[]" accept="video/*">
+                <button type="button" onclick="deleteVideo('{{ video.id }}')">Delete Video</button>
+            </div>
+        {% endfor %}
+        <div id="videoContainer"></div>
+        <button type="button" onclick="addVideo()">Add Video</button>
+
+        <!-- Course Resources -->
+        <h3>Course Resources</h3>
+        {% for resource in course.resources %}
+            <div class="form-group" id="resource-{{ resource.id }}">
+                <input type="hidden" name="resource_id[]" value="{{ resource.id }}">
+                <label>Existing Resource:</label>
+                <span>{{ resource.filename }}</span>
+                <input type="file" name="resource_file[]" accept="image/*,video/*,application/pdf">
+                <button type="button" onclick="deleteResource('{{ resource.id }}')">Delete Resource</button>
+            </div>
+        {% endfor %}
+        <div id="resourceContainer"></div>
+        <button type="button" onclick="addResource()">Add Resource</button>
+
+        <!-- Course Assignments -->
+        <h3>Course Assignments</h3>
+        {% for assignment in course.assignments %}
+            <div class="form-group" id="assignment-{{ assignment.id }}">
+                <input type="hidden" name="assignment_id[]" value="{{ assignment.id }}">
+                <label>Existing Assignment:</label>
+                <span>{{ assignment.filename }}</span>
+                <input type="file" name="assignment_file[]" accept="image/*,video/*,application/pdf">
+                <button type="button" onclick="deleteAssignment('{{ assignment.id }}')">Delete Assignment</button>
+            </div>
+        {% endfor %}
+        <div id="assignmentContainer"></div>
+        <button type="button" onclick="addAssignment()">Add Assignment</button>
+
+        <!-- Instructor Information -->
+        <h3>Instructor Information</h3>
+        {% for instructor in course.instructors %}
+            <div class="form-group" id="instructor-{{ instructor.id }}">
+                <input type="hidden" name="instructor_id[]" value="{{ instructor.id }}">
+                <label>Instructor Name:</label>
+                <input type="text" name="instructor_name[]" value="{{ instructor.name }}">
+                <label>Profile Link:</label>
+                <input type="text" name="instructor_profile_link[]" value="{{ instructor.profile_link }}">
+                <label>Facebook Link:</label>
+                <input type="text" name="instructor_fb_link[]" value="{{ instructor.fb_link }}">
+                <label>LinkedIn Link:</label>
+                <input type="text" name="instructor_linkedin_link[]" value="{{ instructor.linkedin_link }}">
+                <label>Change Instructor Photo:</label>
+                <input type="file" name="instructor_photo[]" accept="image/*">
+                <button type="button" onclick="deleteInstructor('{{ instructor.id }}')">Delete Instructor</button>
+            </div>
+        {% endfor %}
+        <div id="instructorContainer"></div>
+        <button type="button" onclick="addInstructor()">Add Instructor</button>
+
+        <!-- Track Deletions -->
+        <div id="deletedItemsContainer"></div>
+
+        <button type="submit">Save Changes</button>
+    </form>
+</div>
+
         <div class="right-siderbar">
             <div class = "imp-links">
                 <a href="{{ url_for('public_feed') }}"><img src="{{ url_for('static', filename='images/' + homeicon) }}">Home</a>
@@ -403,88 +508,99 @@
             </div>
         </div>
 
+        <script>
+            function addVideo() {
+                let container = document.getElementById("videoContainer");
+                let div = document.createElement("div");
+                div.className = "form-group";
+                div.innerHTML = `
+                    <label>New Video Title:</label>
+                    <input type="text" name="video_title[]" required>
+                    <label>New Video Description:</label>
+                    <textarea name="video_description[]" required></textarea>
+                    <label>Upload New Video File:</label>
+                    <input type="file" name="video_file[]" accept="video/*" required>
+                `;
+                container.appendChild(div);
+            }
+        
+            function deleteVideo(videoId) {
+                let container = document.getElementById("deletedItemsContainer");
+                container.innerHTML += `<input type="hidden" name="delete_video_id[]" value="${videoId}">`;
+                document.getElementById("video-" + videoId).remove();
+            }
+        
+            function addResource() {
+                let container = document.getElementById("resourceContainer");
+                let div = document.createElement("div");
+                div.className = "form-group";
+                div.innerHTML = `
+                    <label>Upload New Resource:</label>
+                    <input type="file" name="resource_file[]" accept="image/*,video/*,application/pdf" required>
+                `;
+                container.appendChild(div);
+            }
+        
+            function deleteResource(resourceId) {
+                let container = document.getElementById("deletedItemsContainer");
+                container.innerHTML += `<input type="hidden" name="delete_resource_id[]" value="${resourceId}">`;
+                document.getElementById("resource-" + resourceId).remove();
+            }
+        
+            function addAssignment() {
+                let container = document.getElementById("assignmentContainer");
+                let div = document.createElement("div");
+                div.className = "form-group";
+                div.innerHTML = `
+                    <label>Upload New Assignment:</label>
+                    <input type="file" name="assignment_file[]" accept="image/*,video/*,application/pdf" required>
+                `;
+                container.appendChild(div);
+            }
+        
+            function deleteAssignment(assignmentId) {
+                let container = document.getElementById("deletedItemsContainer");
+                container.innerHTML += `<input type="hidden" name="delete_assignment_id[]" value="${assignmentId}">`;
+                document.getElementById("assignment-" + assignmentId).remove();
+            }
+        
+            function addInstructor() {
+                let container = document.getElementById("instructorContainer");
+                let div = document.createElement("div");
+                div.className = "form-group";
+                div.innerHTML = `
+                    <label>Instructor Name:</label>
+                    <input type="text" name="instructor_name[]">
+                    <label>Profile Link:</label>
+                    <input type="text" name="instructor_profile_link[]">
+                    <label>Facebook Link:</label>
+                    <input type="text" name="instructor_fb_link[]">
+                    <label>LinkedIn Link:</label>
+                    <input type="text" name="instructor_linkedin_link[]">
+                    <label>Upload Instructor Photo:</label>
+                    <input type="file" name="instructor_photo[]" accept="image/*">
+                `;
+                container.appendChild(div);
+            }
+        
+            function deleteInstructor(instructorId) {
+                let container = document.getElementById("deletedItemsContainer");
+                container.innerHTML += `<input type="hidden" name="delete_instructor_id[]" value="${instructorId}">`;
+                document.getElementById("instructor-" + instructorId).remove();
+            }
+        </script>
+        
+        </body>
+        </html>
+        
 
 
-<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-<script>
-    var socket = io.connect('http://' + document.domain + ':' + location.port);
-    var room = "{{ room }}";
-
-    // Function to scroll chat to the bottom
-    function scrollToBottom() {
-        var chatBox = document.querySelector('#chat-box');
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // Scroll to bottom initially when the chat loads
-    scrollToBottom();
-
-    // Join the room for the private chat
-    socket.emit('join', room);
-
-    // Function to send message
-    function sendMessage() {
-        var messageContent = document.querySelector('#messageInput').value;
-        if (messageContent.trim() !== '') {
-            socket.emit('send_private_message', {
-                room: room,
-                message: messageContent
-            });
-            document.querySelector('#messageInput').value = '';  // Clear input field
-            scrollToBottom();
-        }
-    }
-
-    // Event listener for send button click
-    document.querySelector('#sendButton').addEventListener('click', function(event) {
-        event.preventDefault();
-        sendMessage();
-    });
-
-    // Event listener for Enter key press
-    document.querySelector('#messageInput').addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            sendMessage();
-        }
-    });
-
-    // Listen for new private messages in real-time
-    socket.on('receive_private_message', function(data) {
-        var chatBox = document.querySelector('#chat-box');
-        var newMessage = `<p class="${data.sender == '{{ session['username'] }}' ? 'sent' : 'received'}">
-                             <strong>${data.sender}:</strong> ${data.message} 
-                             <em>(${data.timestamp})</em>
-                          </p>`;
-        chatBox.innerHTML += newMessage;
-        scrollToBottom();  // Scroll to the bottom when new message arrives
-    });
-
-    // Typing indicator
-    var typingIndicator = document.querySelector('#typing-indicator');
-    var timeout;
-
-    document.querySelector('#messageInput').addEventListener('input', function() {
-        socket.emit('typing', { room: room });
-        clearTimeout(timeout);
-        timeout = setTimeout(function() {
-            socket.emit('stop_typing', { room: room });
-        }, 1000);
-    });
-
-    socket.on('user_typing', function() {
-        typingIndicator.classList.add('active');
-    });
-
-    socket.on('user_stopped_typing', function() {
-        typingIndicator.classList.remove('active');
-    });
-
-    // Scroll to bottom on initial page load
-    window.onload = function() {
-        scrollToBottom();
-    };
-</script>
-
+        
 </body>
 </html>
+
+
+
+
+
+

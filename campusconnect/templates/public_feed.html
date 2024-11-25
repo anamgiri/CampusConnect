@@ -362,7 +362,19 @@
                     <a href="{{ url_for('servers') }}"><img src="{{ url_for('static', filename='images/' + group) }}">Servers</a>
                     <a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + video) }}">Reels</a>
                     <a href="{{ url_for('webinar') }}"><img src="{{ url_for('static', filename='images/' + webinar) }}">Webinar</a>
-
+                    <a href="{{ url_for('essays') }}">
+                        <img src="{{ url_for('static', filename='images/essays.png') }}" alt="Essays Icon" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;">
+                        Essays
+                    </a>
+                    <a href="{{ url_for('mentors') }}">
+                        <img src="{{ url_for('static', filename='images/mentor.jpg') }}" alt="Mentors Icon" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;">
+                        Mentors
+                    </a>  
+                    <a href="{{ url_for('challenges') }}">
+                        <img src="{{ url_for('static', filename='images/mentor.jpg') }}" alt="Challenges Icon" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;">
+                        Challenges
+                    </a>
+                    
                 </div>
 
             </div>
@@ -454,9 +466,9 @@
                 <a href="{{ url_for('public_feed') }}"><img src="{{ url_for('static', filename='images/' + homeicon) }}">Home</a>
                 <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/' + profileicon) }}">Profile</a>
                 <a href="{{ url_for('helpers_section') }}"><img src="{{ url_for('static', filename='images/' + helpersicon) }}">Helpers</a>
-                <a href="{{ url_for('friend_list') }}"><img src="{{ url_for('static', filename='images/' + scholarshipicon) }}">Scholarship Search</a>
+                <a href="{{ url_for('scholarshipsearch') }}"><img src="{{ url_for('static', filename='images/' + scholarshipicon) }}">Scholarship Search</a>
                 <a href="{{ url_for('ai_search') }}"><img src="{{ url_for('static', filename='images/' + ai) }}">AI Search</a>
-                <a href="{{ url_for('webinar') }}"><img src="{{ url_for('static', filename='images/' + courses) }}">Courses</a>
+                <a href="{{ url_for('courses') }}"><img src="{{ url_for('static', filename='images/' + courses) }}">Courses</a>
             </div>
         </div>
 

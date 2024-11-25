@@ -1,37 +1,43 @@
+
 <!doctype html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ user.username }}'s Profile</title>
+    <title>Review Course Contents</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
     <style>
-        .profile-header {
-            display: flex;
-            align-items: center;
+          .content-section {
             margin-bottom: 20px;
-        }
-        .profile-header img {
-            border-radius: 50%;
-            width: 100px;
-            height: 100px;
-            margin-right: 20px;
-        }
-        .video-list, .post-list, .request-list {
-            margin-top: 20px;
-        }
-        .video-item, .post-item, .request-item {
+            padding: 15px;
             border: 1px solid #ddd;
-            padding: 10px;
-            margin-bottom: 10px;
-            border-radius: 5px;
+            border-radius: 8px;
+            background-color: #f9f9f9;
         }
+        .content-item {
+            margin: 10px 0;
+        }
+        .pdf-viewer {
+            width: 100%;
+            height: 500px;
+            border: none;
+        }
+        .preview-button {
+            color: #007bff;
+            cursor: pointer;
+            text-decoration: underline;
+        }
+
         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #efefef;
+            background-color: #f0f2f5;
             margin: 0;
             padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+            padding-top: 50px;
         }
-        
+
         nav{
             display: flex;
             align-items: center;
@@ -130,11 +136,6 @@
             flex-basis: 40%;
             height : 40%;
             margin-right : 5%;
-            background-color: #fff;
-            border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
 
         }
         .imp-links a{
@@ -343,6 +344,159 @@
         }
     }
     
+
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            width: 90%;
+            max-width: 800px;
+            transition: transform 0.2s ease;
+        }
+
+        .container:hover {
+            transform: scale(1.02);
+        }
+
+        h1 {
+            color: #333;
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 20px;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            word-wrap: break-word;
+        }
+
+        .webinar-detail {
+            color: #555;
+            font-size: 16px;
+            margin: 10px 0;
+            padding: 10px;
+            border-left: 4px solid #007bff;
+            background-color: #f9f9f9;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            word-wrap: break-word;
+        }
+
+        .webinar-detail i {
+            font-size: 18px;
+            color: #007bff;
+            margin-right: 12px;
+        }
+
+        .description {
+            margin: 20px 0;
+            padding: 15px;
+            background-color: #f5f5f5;
+            border-radius: 8px;
+            border-left: 4px solid #007bff;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
+        }
+
+        .description img {
+            max-width: 100%;
+            height: auto;
+            max-height: 200px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            margin: 10px 0;
+        }
+
+        .link-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        a.webinar-link {
+            display: inline-block;
+            padding: 15px 25px;
+            color: #fff;
+            background-color: #007bff;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 18px;
+            font-weight: bold;
+            transition: background-color 0.3s ease;
+            box-shadow: 0 4px 10px rgba(0, 123, 255, 0.3);
+        }
+
+        a.webinar-link:hover {
+            background-color: #0056b3;
+        }
+
+        .countdown {
+            font-size: 18px;
+            margin: 20px 0;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .feedback {
+            margin-top: 30px;
+            text-align: center;
+        }
+
+        .feedback button {
+            padding: 12px 20px;
+            font-size: 16px;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            margin: 0 10px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .feedback .rsvp {
+            background-color: #28a745;
+        }
+
+        .feedback .rsvp:hover {
+            background-color: #218838;
+        }
+
+        .feedback .like {
+            background-color: #ff4757;
+        }
+
+        .feedback .like:hover {
+            background-color: #e84141;
+        }
+        .button-group a {
+            display: inline-block;
+            margin: 10px;
+            padding: 15px 25px;
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+        }
+        .button-group a:hover {
+            background-color: #0056b3;
+        }
+
+        @media (max-width: 600px) {
+            .container {
+                padding: 20px;
+            }
+
+            h1 {
+                font-size: 26px;
+            }
+
+            .webinar-detail, .description, .link-container, .feedback button {
+                font-size: 14px;
+            }
+
+            .webinar-detail i {
+                font-size: 16px;
+            }
+        }
     </style>
 </head>
 <body>
@@ -351,7 +505,7 @@
             <div class="logo">UniRec</div>
             <ul>
                 <li><a href="{{ url_for('notifications') }}"><img src="{{ url_for('static', filename='images/' + notification) }}"></a></li>
-                 <li><a href="#"><img src="{{ url_for('static', filename='images/' + chat) }}"></a></li>
+                 <li><a href="{{ url_for('chat') }}"><img src="{{ url_for('static', filename='images/' + chat) }}"></a></li>
                 <li><a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + reels) }}"></a></li>
             
             </ul>
@@ -393,84 +547,110 @@
         <div class="main-content">
 
 
-            <div class="profile-header">
-                <img src="{{ url_for('static', filename='images/' + (user.profile_pic or 'default.jpg')) }}" alt="Profile Picture">
-                <div>
-                    <h2>{{ user.username }}</h2>
-                    <p>{{ user.eca or 'No description available' }}</p>
-                </div>
-            </div>
+            <h2>Review Course Resources</h2>
     
-            <div class="video-list">
-                <h2>Uploaded Videos</h2>
-                {% if videos %}
-                    {% for video in videos %}
-                        <div class="video-item">
-                            <h4>{{ video.title }}</h4>
-                            <video width="100%" controls>
-                                <source src="{{ url_for('static', filename='videos/' + video.filename) }}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                            <p>{{ video.description }}</p>
+            <!-- Course Resources Section -->
+            <div class="content-section">
+                <h3>Course Resources</h3>
+                {% if course_resources %}
+                    {% for resource in course_resources %}
+                        <div class="content-item">
+                            {% if resource.filename.endswith('.pdf') %}
+                                <p><strong>{{ resource.title }}</strong> - 
+                                <span class="preview-button" onclick="previewPDF('{{ url_for('static', filename='course_resources/' + resource.filename) }}')">Preview PDF</span> | 
+                                <a href="{{ url_for('static', filename='course_resources/' + resource.filename) }}" target="_blank">Download</a></p>
+                            {% elif resource.filename.endswith('.jpg') or resource.filename.endswith('.png') %}
+                                <p><strong>{{ resource.title }}</strong></p>
+                                <img src="{{ url_for('static', filename='course_resources/' + resource.filename) }}" alt="{{ resource.title }}" style="max-width:100%; height:auto;">
+                            {% elif resource.filename.endswith('.mp4') %}
+                                <p><strong>{{ resource.title }}</strong></p>
+                                <video width="100%" controls>
+                                    <source src="{{ url_for('static', filename='course_resources/' + resource.filename) }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            {% endif %}
                         </div>
                     {% endfor %}
                 {% else %}
-                    <p>No videos uploaded yet.</p>
+                    <p>No course resources available.</p>
                 {% endif %}
             </div>
-    
-            <div class="post-list">
-                <h2>Posts</h2>
-                {% if posts %}
-                    {% for post in posts %}
-                        <div class="post-item">
-                            <h4>{{ post.title }}</h4>
-                            <p>{{ post.content }}</p>
+        
+            <!-- Course Assignments Section -->
+            <div class="content-section">
+                <h3>Course Assignments</h3>
+                {% if course_assignments %}
+                    {% for assignment in course_assignments %}
+                        <div class="content-item">
+                            {% if assignment.filename.endswith('.pdf') %}
+                                <p><strong>{{ assignment.title }}</strong> - 
+                                <span class="preview-button" onclick="previewPDF('{{ url_for('static', filename='course_assignments/' + assignment.filename) }}')">Preview PDF</span> | 
+                                <a href="{{ url_for('static', filename='course_assignments/' + assignment.filename) }}" target="_blank">Download</a></p>
+                            {% elif assignment.filename.endswith('.jpg') or assignment.filename.endswith('.png') %}
+                                <p><strong>{{ assignment.title }}</strong></p>
+                                <img src="{{ url_for('static', filename='course_assignments/' + assignment.filename) }}" alt="{{ assignment.title }}" style="max-width:100%; height:auto;">
+                            {% elif assignment.filename.endswith('.mp4') %}
+                                <p><strong>{{ assignment.title }}</strong></p>
+                                <video width="100%" controls>
+                                    <source src="{{ url_for('static', filename='course_assignments/' + assignment.filename) }}" type="video/mp4">
+                                    Your browser does not support the video tag.
+                                </video>
+                            {% endif %}
                         </div>
                     {% endfor %}
                 {% else %}
-                    <p>No posts available.</p>
+                    <p>No course assignments available.</p>
                 {% endif %}
             </div>
-    
-            <div class="request-list">
-                <h2>LOR Requests</h2>
-                {% if lor_requests %}
-                    {% for request in lor_requests %}
-                        <div class="request-item">
-                            <p>{{ request.sender.username }} has requested a Letter of Recommendation.</p>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p>No LOR requests.</p>
-                {% endif %}
-            </div>
-    
-            <div class="request-list">
-                <h2>Counsel Requests</h2>
-                {% if counsel_requests %}
-                    {% for request in counsel_requests %}
-                        <div class="request-item">
-                            <p>{{ request.sender.username }} has requested counsel.</p>
-                        </div>
-                    {% endfor %}
-                {% else %}
-                    <p>No counsel requests.</p>
-                {% endif %}
+        
+            <!-- PDF Viewer -->
+            <div id="pdfViewerContainer" style="display:none; margin-top:20px;">
+                <h3>PDF Preview</h3>
+                <iframe id="pdfViewer" class="pdf-viewer"></iframe>
             </div>
         </div>
-        <div class="right-siderbar">
-            <div class = "imp-links">
-                <a href="{{ url_for('public_feed') }}"><img src="{{ url_for('static', filename='images/' + homeicon) }}">Home</a>
-                <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/' + profileicon) }}">Profile</a>
-                <a href="{{ url_for('helpers_section') }}"><img src="{{ url_for('static', filename='images/' + helpersicon) }}">Helpers</a>
-                <a href="{{ url_for('scholarshipsearch') }}"><img src="{{ url_for('static', filename='images/' + scholarshipicon) }}">Scholarship Search</a>
-                <a href="{{ url_for('ai_search') }}"><img src="{{ url_for('static', filename='images/' + ai) }}">AI Search</a>
-                <a href="{{ url_for('webinar') }}"><img src="{{ url_for('static', filename='images/' + courses) }}">Courses</a>
-            </div>
+    </div>
+
+    <div class="right-siderbar">
+        <div class = "imp-links">
+            <a href="{{ url_for('public_feed') }}"><img src="{{ url_for('static', filename='images/' + homeicon) }}">Home</a>
+            <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/' + profileicon) }}">Profile</a>
+            <a href="{{ url_for('helpers_section') }}"><img src="{{ url_for('static', filename='images/' + helpersicon) }}">Helpers</a>
+            <a href="{{ url_for('scholarshipsearch') }}"><img src="{{ url_for('static', filename='images/' + scholarshipicon) }}">Scholarship Search</a>
+            <a href="{{ url_for('ai_search') }}"><img src="{{ url_for('static', filename='images/' + ai) }}">AI Search</a>
+            <a href="{{ url_for('webinar') }}"><img src="{{ url_for('static', filename='images/' + courses) }}">Courses</a>
         </div>
+    </div> 
+
+</div>
+
+
+<script>
+    function previewPDF(pdfUrl) {
+        const pdfViewerContainer = document.getElementById("pdfViewerContainer");
+        const pdfViewer = document.getElementById("pdfViewer");
+        pdfViewer.src = pdfUrl;
+        pdfViewerContainer.style.display = "block";
+    }
+</script>
 
 
     
 </body>
 </html>
+
+
+        
+
+   
+
+
+
+
+
+
+
+    
+
+
+

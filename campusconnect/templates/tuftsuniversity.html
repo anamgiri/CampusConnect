@@ -702,10 +702,11 @@ p {
         <div id="suggestions" class="suggestions-box"></div>
             </div>  
 
-            <h1>Dartmouth College</h1>
-<img src="{{ url_for('static', filename='images/' + (university_image or 'dartmouthcollege')) }}" 
-     alt="{{ university_name }} Banner" 
-     style="width: 100%; border-radius: 10px; margin-bottom: 20px;">
+            <h1>Tufts University</h1>
+<img src="{{ url_for('static', filename='images/' + (university_image or tuftsuniversity)) }}" 
+    alt="{{ university_name }} Banner" 
+    style="width: 100%; border-radius: 10px; margin-bottom: 20px;">
+
 <table class="university-table">
     <thead>
         <tr>
@@ -716,119 +717,140 @@ p {
     <tbody>
         <tr>
             <td>Setting</td>
-            <td>Rural</td>
+            <td>Urban</td>
         </tr>
         <tr>
             <td>Out-of-State Tuition & Fees (International Student)</td>
-            <td>$64,700</td>
+            <td>$64,000</td>
         </tr>
         <tr>
             <td>In-state Tuition and Fees</td>
-            <td>$64,700</td>
+            <td>$64,000</td>
         </tr>
         <tr>
             <td>Undergraduate Enrollment</td>
-            <td>4,556</td>
+            <td>5,200</td>
         </tr>
         <tr>
             <td>Acceptance Rate</td>
-            <td>6.2%</td>
+            <td>16.1%</td>
         </tr>
         <tr>
             <td>Visit School Website</td>
-            <td><a href="https://home.dartmouth.edu" target="_blank">Visit</a></td>
+            <td><a href="https://www.tufts.edu" target="_blank">Visit</a></td>
         </tr>
         <tr>
             <td>School Address</td>
-            <td>Hanover, NH 03755, USA</td>
+            <td>419 Boston Ave, Medford, MA 02155, USA</td>
         </tr>
         <tr>
             <td>Rankings</td>
-            <td>#12 in National Universities, #7 in Best Value Schools</td>
+            <td>#30 in National Universities, #23 in Best Value Schools</td>
         </tr>
     </tbody>
 </table>
 
-<h2 class="title">Dartmouth College Acceptance Data</h2>
+<h2 class="title">Tufts University Acceptance Data</h2>
 <table class="university-table">
     <thead>
         <tr>
             <th>Class of</th>
             <th>Number of Applications Received</th>
             <th>Number of Students Accepted</th>
-            <th>Dartmouth College Acceptance Rate</th>
+            <th>Tufts University Acceptance Rate</th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <td>2027</td>
-            <td>28,841</td>
-            <td>1,796</td>
-            <td>6.2%</td>
+            <td>33,000</td>
+            <td>5,300</td>
+            <td>16.1%</td>
         </tr>
         <tr>
             <td>2026</td>
-            <td>28,336</td>
-            <td>1,768</td>
-            <td>6.2%</td>
+            <td>34,200</td>
+            <td>5,400</td>
+            <td>15.8%</td>
         </tr>
         <tr>
             <td>2025</td>
-            <td>27,299</td>
-            <td>1,749</td>
-            <td>6.4%</td>
+            <td>32,800</td>
+            <td>5,200</td>
+            <td>15.8%</td>
         </tr>
         <tr>
             <td>2024</td>
-            <td>21,394</td>
-            <td>1,881</td>
-            <td>8.8%</td>
+            <td>31,200</td>
+            <td>5,000</td>
+            <td>16.0%</td>
         </tr>
     </tbody>
 </table>
 
-            
 
-<h2 class="title">Dartmouth College Financial Aid Principles</h2>
-<p>When awarding aid, Dartmouth follows these principles:</p>
+<h2 class="title">Tufts University Financial Aid Principles</h2>
+<p>At Tufts, we believe that cost should never be a barrier to a world-class education. That’s why we are committed to meeting 100% of the demonstrated financial need for all admitted undergraduates, regardless of citizenship status. Our financial aid packages are designed to ensure that students can focus on their studies without the worry of tuition costs.</p>
+<p>Tufts University follows the principle that education should be accessible to all qualified students, and we make the following commitments regarding financial aid:</p>
 <ul>
-    <li>Dartmouth offers <strong>zero parent contribution</strong> and <strong>no loans</strong> for families with annual incomes below $125,000, provided their assets are typical for this income range. This ensures that students from low- to middle-income backgrounds can afford a Dartmouth education.</li>
-    <li>Students from these families are expected to contribute to their education through summer or leave-term earnings, part-time work during the school year, and/or personal savings. The full financial need is met without student loans, though loans are available upon request.</li>
-    <li>Families with annual incomes above $125,000 are still eligible for need-based scholarships. Dartmouth reviews each application individually, and families earning above this threshold may still receive scholarship assistance.</li>
-    <li><strong>No expectation for student loans:</strong> Students who qualify for need-based financial aid will not be expected to borrow loans as part of their aid package. Aid is provided through employment and scholarships/grants.</li>
+    <li><strong>Admission:</strong> Tufts meets 100% of demonstrated financial need for all admitted undergraduate students, regardless of citizenship status. We are committed to providing a pathway for exceptional students from all backgrounds to join the Tufts community.</li>
+    <li><strong>Financial Aid Packages:</strong> Tufts offers a combination of grants, student loans, and work-study funding, ensuring that financial aid recipients can focus on their studies and not on how to pay for their education.</li>
+    <li><strong>No Loans for Low-Income Families:</strong> Students from families with annual incomes under $60,000 typically receive financial aid packages with no student loans, relying on grant aid and work-study funding to meet their needs.</li>
 </ul>
 
-<p>Students and parents may choose to borrow loans to cover the calculated family contribution or additional expenses such as health insurance or a computer.</p>
+<h2 class="title">Tufts University Financial Aid Principles for International Students</h2>
+<p>At Tufts, we are committed to making education accessible to all qualified students, including international students. While financial aid for international students is limited compared to U.S. citizens, we do offer need-based scholarships and merit-based awards.</p>
+<p>For international students, Tufts offers the following principles regarding financial aid:</p>
+<ul>
+    <li>International students are considered for <strong>need-based financial aid</strong> on a limited basis, with decisions based on academic achievement and financial need.</li>
+    <li>Tufts offers <strong>merit-based scholarships</strong> to exceptional international students, recognizing achievements in academics, leadership, and extracurricular activities.</li>
+    <li>Financial aid packages for international students may include a combination of need-based aid and merit-based scholarships to reduce the burden of tuition costs.</li>
+</ul>
 
-<p>For a personalized estimate of financial aid, visit Dartmouth's <a href="https://financialaid.dartmouth.edu/cost-attendance/net-price-calculator" target="_blank">Net Price Calculator</a>.</p>
-
-<h2 class="title">Dartmouth College Financial Aid Highlights</h2>
+<h2 class="title">Tufts University Cost Overview</h2>
 <table class="university-table">
     <thead>
         <tr>
-            <th>Income Level</th>
-            <th>Financial Aid Support</th>
-            <th>Parent Contribution</th>
-            <th>Loan Inclusion</th>
+            <th>Category</th>
+            <th>Cost</th>
         </tr>
     </thead>
     <tbody>
         <tr>
-            <td>$0–125,000</td>
-            <td>Full need met</td>
-            <td>None</td>
-            <td>No loans</td>
+            <td>Tuition and Fees</td>
+            <td>$64,000</td>
         </tr>
         <tr>
-            <td>Above $125,000</td>
-            <td>Scholarship consideration available</td>
-            <td>Varies based on family financial profile</td>
-            <td>No expectation, but optional</td>
+            <td>Room and Board</td>
+            <td>$18,500</td>
+        </tr>
+        <tr>
+            <td>Books and Personal</td>
+            <td>$3,000</td>
+        </tr>
+        <tr>
+            <td>Total Estimated Cost of Attendance</td>
+            <td>$85,500</td>
         </tr>
     </tbody>
 </table>
 
-<h1 class="title">Dartmouth College Academic Scores</h1>
+<p>For financial aid eligibility, Tufts calculates the difference between a family’s Expected Family Contribution (EFC) and the Cost of Attendance (COA). This difference is referred to as the family’s <strong>demonstrated financial need</strong>.</p>
+<p><a href="https://provost.tufts.edu/institutionalresearch/cost-of-attendance/" target="_blank">Net Price Calculator</a></p>
+
+<h2 class="title">Tufts University Signature Scholarships</h2>
+<p>Tufts also offers competitive merit-based scholarships to recognize exceptional academic and extracurricular accomplishments:</p>
+<ul>
+    <li><strong>National Merit Scholarship:</strong> Awarded to students who are National Merit finalists, offering $500 per semester for up to eight semesters of enrollment at Tufts.</li>
+    <li><strong>ROTC Scholarships:</strong> Students participating in Army, Navy, or Air Force ROTC can use scholarships at Tufts, including full-tuition and partial scholarships.</li>
+</ul>
+
+<h2 class="title">Experience Tufts</h2>
+<p>Experience Tufts is a student-led initiative providing funding for students on need-based financial aid, enabling participation in extracurricular activities such as club sports, arts, service trips, and more.</p>
+<p><a href="https://www.tufts.edu" target="_blank">Learn more about Experience Tufts</a></p>
+
+
+<h1 class="title">Tufts University Academic Scores</h1>
 <table class="university-table">
     <thead>
         <tr>
@@ -843,122 +865,111 @@ p {
         <tr>
             <td rowspan="3">SAT</td>
             <td>Math</td>
-            <td>750</td>
-            <td>730</td>
-            <td>790</td>
+            <td>740</td>
+            <td>720</td>
+            <td>760</td>
         </tr>
         <tr>
             <td>Reading + Writing</td>
-            <td>740</td>
+            <td>730</td>
             <td>710</td>
-            <td>770</td>
+            <td>750</td>
         </tr>
         <tr>
             <td>Composite</td>
-            <td>1490</td>
-            <td>1440</td>
-            <td>1560</td>
+            <td>1470</td>
+            <td>1410</td>
+            <td>1530</td>
         </tr>
         <tr>
             <td>ACT</td>
             <td>Composite</td>
             <td>33</td>
             <td>32</td>
-            <td>35</td>
+            <td>34</td>
         </tr>
         <tr>
             <td>GPA</td>
             <td>Unweighted</td>
-            <td>3.9 - 4.0</td>
+            <td>3.90 - 4.0</td>
             <td>3.85</td>
             <td>4.0</td>
         </tr>
     </tbody>
 </table>
 
+<h1 class="title">What Tufts Looks for in Applicants</h1>
+<p>Tufts University seeks students who are intellectually playful, globally minded, civically engaged, collaborative, and kind. The admissions process is holistic, focusing on a blend of academic achievement, extracurricular engagement, personal growth, and a demonstrated passion for interdisciplinary learning. Tufts values students who thrive in collaborative environments and contribute meaningfully to their communities.</p>
 
-<h1 class="title">What Dartmouth Looks for in Applicants</h1>
-<p>Dartmouth College seeks applicants who demonstrate strong academic capabilities, leadership, and active community engagement. The admissions process evaluates students holistically, considering multiple factors beyond grades and test scores. The main questions guiding Dartmouth’s selection process are: <strong>“Who will thrive at Dartmouth?”</strong> and <strong>“Who will contribute meaningfully to our community?”</strong></p>
-
-<h2 class="section-title">Key Qualities Dartmouth Looks For</h2>
+<h2 class="section-title">Key Qualities Tufts Looks For</h2>
 <ul class="criteria-list">
-    <li><span class="icon">📚</span><strong>Academic Excellence</strong>: The high school transcript is crucial, showing a track record of rigorous courses and strong performance. Dartmouth values applicants who challenge themselves academically.</li>
-    <li><span class="icon">💬</span><strong>Teacher and Counselor Recommendations</strong>: Recommendations provide context about a student’s intellectual curiosity, character, and interaction with peers. Select teachers who know you well and can speak to your strengths.</li>
-    <li><span class="icon">🎓</span><strong>Leadership and Engagement</strong>: Applicants should showcase leadership roles and active participation in meaningful activities that demonstrate commitment and impact.</li>
-    <li><span class="icon">📝</span><strong>Personal Essays</strong>: Essays should be genuine, offering a window into your experiences, motivations, and aspirations. Dartmouth values authentic storytelling that highlights personal voice.</li>
-    <li><span class="icon">🌍</span><strong>Resilience and Adaptability</strong>: The college seeks students who have overcome challenges and can reflect on growth and resilience.</li>
+    <li><span class="icon">📚</span><strong>Academic Achievement</strong>: Tufts values a strong academic record, including high grades in challenging courses such as AP, IB, or dual-enrollment classes. While they do not report average GPAs, most admitted students are in the top 10% of their graduating class.</li>
+    <li><span class="icon">💬</span><strong>Standardized Test Scores</strong>: Tufts is test-optional but will consider SAT or ACT scores if submitted. The middle 50% ranges for the Class of 2027 are 1460-1540 for the SAT and 33-35 for the ACT.</li>
+    <li><span class="icon">🎓</span><strong>Extracurricular Involvement</strong>: Tufts values students with meaningful extracurricular achievements, particularly in Tier 1 or Tier 2 activities that show leadership, passion, and impact.</li>
+    <li><span class="icon">📝</span><strong>Personal Essays</strong>: Essays are crucial for showcasing your character, intellectual curiosity, and passion for Tufts. Applicants should articulate their specific interest in Tufts and how they embody its values.</li>
+    <li><span class="icon">🌍</span><strong>Recommendation Letters</strong>: Letters from teachers and counselors provide context about your academic strengths, character, and potential. Choose recommenders who know you well and can provide detailed insights.</li>
 </ul>
 
-<h2 class="section-title">Standardized Test Scores</h2>
-<p>Dartmouth considers test scores within the context of the applicant's full profile. While there are no strict score cutoffs, the middle 50% range for admitted students is:</p>
+<h2 class="section-title">Testing and Academic Standards</h2>
+<p>While Tufts is test-optional, submitting strong scores can bolster your application. The middle 50% test score ranges for the Class of 2027 were:</p>
 <ul class="score-list">
-    <li><strong>SAT Composite:</strong> 1440–1560</li>
-    <li><strong>ACT Composite:</strong> 32–35</li>
+    <li><strong>SAT Composite:</strong> 1460-1540</li>
+    <li><strong>ACT Composite:</strong> 33-35</li>
 </ul>
-<p>Scores below these ranges do not disqualify applicants, as Dartmouth evaluates academic readiness alongside a student’s full application and unique context.</p>
+<p>Students who perform well on standardized tests are encouraged to submit their scores, but applicants without scores will not be at a disadvantage as Tufts reviews applications holistically.</p>
 
-<h2 class="section-title">Evaluating Applications</h2>
-<p>The admissions committee, made up of experienced officers and faculty members, assesses applications to find students with exceptional potential. Each application is reviewed to understand the student’s achievements and potential contributions. Factors such as access to AP/IB courses and how students took advantage of available resources are taken into account.</p>
+<h2 class="section-title">What Sets Tufts Apart</h2>
+<p>Tufts seeks students who are adaptable, creative, and eager to engage in interdisciplinary learning. The university emphasizes intellectual curiosity, collaboration, and civic engagement. With three undergraduate schools—the School of Arts and Sciences, the School of Engineering, and the School of the Museum of Fine Arts—Tufts provides a dynamic environment for students to explore diverse interests and make meaningful contributions.</p>
 
-<h2 class="section-title">Tips for Dartmouth Applicants</h2>
+<h2 class="section-title">Tips for Tufts Applicants</h2>
 <ul class="tips-list">
-    <li><strong>Select Recommenders Thoughtfully</strong>: Choose teachers who can speak to your academic and personal qualities.</li>
-    <li><strong>Be Authentic in Your Essays</strong>: Showcase your true voice and personal experiences.</li>
-    <li><strong>Highlight Leadership and Involvement</strong>: Emphasize long-term dedication to activities that matter to you.</li>
-    <li><strong>Demonstrate Academic Passion</strong>: Engage deeply with subjects of interest to reflect intellectual curiosity.</li>
+    <li><strong>Take Challenging Courses</strong>: Build a rigorous academic schedule with a focus on core subjects. Engage in AP, IB, or dual-enrollment courses if available, and prioritize intellectual growth.</li>
+    <li><strong>Write Thoughtful Essays</strong>: Use your essays to highlight your unique voice, interests, and how you align with Tufts’ values. Demonstrate your intellectual curiosity and passion for interdisciplinary learning.</li>
+    <li><strong>Choose Recommenders Wisely</strong>: Select recommenders who know you well and can provide specific examples of your academic and personal strengths.</li>
+    <li><strong>Focus on Impactful Extracurriculars</strong>: Highlight activities that demonstrate leadership, passion, and sustained commitment. Depth of involvement is more significant than the number of activities.</li>
+    <li><strong>Visit and Engage with Tufts</strong>: Attend campus visits, virtual tours, or Jumbo Chats to learn more about Tufts. Demonstrating interest through these opportunities can strengthen your application.</li>
 </ul>
 
-<p>Dartmouth seeks students ready to excel academically and contribute positively to its vibrant community. The admissions process values each aspect of the application, striving to find those who will thrive and make meaningful contributions both at Dartmouth and beyond.</p>
+<p>Tufts’ admissions process is designed to identify students who will thrive in its intellectually vibrant, collaborative, and globally minded community. By excelling academically, engaging deeply in extracurriculars, and expressing your authentic self in your application, you can position yourself as a strong candidate for admission.</p>
 
 
-<h1 class="title">Dartmouth's Supplemental Essay Prompts</h1>
+<h1>Tufts Supplemental Prompts for the Class of 2029:</h1>
 
 <div class="prompt">
-    <h2 class="prompt-title">Prompt #1: Why Dartmouth?</h2>
-    <p class="prompt-text">
-        As you seek admission to Dartmouth's Class of 2029, what aspects of the college's academic program, community, and/or campus environment attract your interest? How is Dartmouth a good fit for you? (100 words or fewer)
-    </p>
+    <h2 class="prompt-title">Applicants to the School of Arts & Sciences or the School of Engineering</h2>
+    <p class="prompt-text">Please respond to one of the following three prompts in 200-250 words:</p>
+    <ul class="prompt-list">
+        <li>It’s cool to love learning. What excites your intellectual curiosity and why?</li>
+        <li>How have the environments or experiences of your upbringing – your family, home, neighborhood, or community – shaped the person you are today?</li>
+        <li>Using a specific example or two, tell us about a way that you contributed to building a collaborative and/or inclusive community.</li>
+    </ul>
 </div>
 
 <div class="prompt">
-    <h2 class="prompt-title">Prompt #2: Personal Reflection (Choose One)</h2>
-    <p class="prompt-text">
-        Please respond to one of the following prompts in 250 words or fewer:
-    </p>
-    <ol class="essay-list">
-        <li><strong></strong> There is a Quaker saying: Let your life speak. Describe the environment in which you were raised and the impact it has had on the person you are today.</li>
-        <li><strong></strong> "Be yourself," Oscar Wilde advised. "Everyone else is taken." Introduce yourself.</li>
-    </ol>
+    <h2 class="prompt-title">Applicants to the School of the Museum of Fine Arts (SMFA) at Tufts</h2>
+    <p class="prompt-text">Please respond to the following prompt in 200-250 words:</p>
+    <p class="prompt-text">Art has the power to disrupt our preconceptions, shape public discourse, and imagine new ways of being in the world. What are the ideas you’d like to explore in your work?</p>
 </div>
 
 <div class="prompt">
-    <h2 class="prompt-title">Prompt #3: Self-Expression (Choose One)</h2>
-    <p class="prompt-text">
-        Please respond to one of the following prompts in 250 words or fewer:
-    </p>
-    <ol class="essay-list">
-        <li><strong></strong> What excites you?</li>
-        <li><strong></strong> Labor leader and civil rights activist Dolores Huerta recommended a life of purpose. "We must use our lives to make the world a better place to live, not just to acquire things," she said. "That is what we are put on the earth for." In what ways do you hope to make—or are you already making—an impact? Why? How?</li>
-        <li><strong></strong> In "Oh, The Thinks You Can Think," Dr. Seuss invites us to "Think and wonder. Wonder and think." Imagine your anticipated academic major: How does that course of study sync with Dr. Seuss's advice to you?</li>
-        <li><strong></strong> The social and family interactions of wild chimpanzees have been the focus of Dame Jane Goodall's research for decades. Her understanding of animal behavior prompted the English primatologist to see a lesson for human communities as well: "Change happens by listening and then starting a dialogue with the people who are doing something you don't believe is right." Channel Dame Goodall: Tell us about a moment when you engaged in a difficult conversation or encountered someone with an opinion or perspective that was different from your own. How did you find common ground?</li>
-        <li><strong></strong> Celebrate your nerdy side.</li>
-        <li><strong></strong> "It's not easy being green…" was the frequent refrain of Kermit the Frog. How has difference been a part of your life, and how have you embraced it as part of your identity, outlook, or sense of purpose?</li>
-        <li><strong></strong> Buddy Teevens '79 was a legendary and much-beloved coach at Dartmouth. He often told parents: "Your son will be a great football player when it's football time, a great student when it's academic time, and a great person all of the time." If Coach Teevens had said that to you, what would it mean to be "a great person"?</li>
-    </ol>
+    <h2 class="prompt-title">All Applicants</h2>
+    <p class="prompt-text">In addition, we will ask all applicants to complete this sentence in 100 words or less:</p>
+    <p class="prompt-text"><strong>“I am applying to Tufts because…”</strong></p>
 </div>
 
 <div class="note-container">
     <div class="note">
         <h2>Detailed Essay Guidance</h2>
-        <p>For comprehensive insights on how to approach Dartmouth’s supplemental essay prompts, visit these links. These resources offers detailed strategies, example responses, and tips tailored to each prompt, helping you craft responses that align with Princeton's values.</p>
-        <p>Check out the guide on the <a href="https://www.collegeessayguy.com/blog/dartmouth-supplemental-essay">College Essay Guy website</a> for more information.</p>
-
-<p>For additional essay-writing tips, visit <a href="https://blog.collegevine.com/how-to-write-the-dartmouth-college-essays">CollegeVine's guide on writing Princeton University essays</a>.</p>
-
-<p>Learn more about writing Dartmouth’s supplemental essays by reading this helpful article on <a href="https://nextadmit.com/blog/how-to-write-the-yale-supplemental-essays/">Next Admit's blog</a>.</p>
-
+        <p>For tips and strategies on how to approach Tufts' supplemental prompts, explore the following resources:</p>
+        <ul>
+            <li><a href="https://www.collegeessayguy.com/blog/tufts-university-supplemental-essay" target="_blank">College Essay Guy</a>: Expert advice on crafting compelling essays for Tufts.</li>
+            <li><a href="https://blog.collegevine.com/how-to-write-the-tufts-university-essays" target="_blank">CollegeVine</a>: A detailed breakdown of Tufts’ prompts with example responses.</li>
+            <li><a href="https://nextadmit.com/blog/how-to-write-the-tufts-supplemental-essays/" target="_blank">Next Admit</a>: Insights into showcasing your unique perspective and passion in Tufts' essays.</li>
+        </ul>
     </div>
 </div>
+
+    
 
 
         </div>
@@ -972,6 +983,7 @@ p {
                 <a href="{{ url_for('webinar') }}"><img src="{{ url_for('static', filename='images/' + courses) }}">Courses</a>
             </div>
         </div>
+
 
         
 

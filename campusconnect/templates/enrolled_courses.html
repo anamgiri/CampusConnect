@@ -1,12 +1,9 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Chat with {{ chat_user.username }}</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500&display=swap" rel="stylesheet">
+    <title>Enrolled Courses - CampusConnect</title>
     <style>
-       body {
+         body {
             font-family: 'Helvetica Neue', Arial, sans-serif;
             background-color: #efefef;
             margin: 0;
@@ -318,7 +315,6 @@
             font-size: 12px;
         }
     }
-    
     </style>
 </head>
 <body>
@@ -327,7 +323,7 @@
             <div class="logo">UniRec</div>
             <ul>
                 <li><a href="{{ url_for('notifications') }}"><img src="{{ url_for('static', filename='images/' + notification) }}"></a></li>
-                 <li><a href="#"><img src="{{ url_for('static', filename='images/' + chat) }}"></a></li>
+                 <li><a href="{{ url_for('chat') }}"><img src="{{ url_for('static', filename='images/' + chat) }}"></a></li>
                 <li><a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + reels) }}"></a></li>
             
             </ul>
@@ -368,29 +364,21 @@
             <!-- Main Content: Video Feed -->
         <div class="main-content">
 
-                <div class="header">
-                    Chat with {{ chat_user.username }}
-                </div>
-            
-                <div class="chat-box" id="chat-box">
-                    {% for message in messages %}
-                        <p class="{{ 'sent' if message.sender.username == session['username'] else 'received' }}">
-                            <strong>{{ message.sender.username }}:</strong> {{ message.content }} 
-                            <em>({{ message.timestamp.strftime('%Y-%m-%d %H:%M:%S') }})</em>
-                        </p>
-                    {% endfor %}
-                </div>
-            
-                <div class="typing-indicator" id="typing-indicator">
-                    {{ chat_user.username }} is typing...
-                </div>
-            
-                <div class="form-container">
-                    <input type="text" name="message" id="messageInput" placeholder="Enter your message" required autocomplete="off">
-                    <button type="submit" id="sendButton">Send</button>
-                </div>
 
-            
+            <h2>Enrolled Courses</h2>
+    {% if enrolled_courses %}
+        <ul>
+            {% for course in enrolled_courses %}
+                <li>
+                    <h3><a href="{{ url_for('view_course', slug=course.slug) }}">{{ course.title }}</a></h3>
+                    <p>{{ course.description }}</p>
+                    <p><strong>Category:</strong> {{ course.category }}</p>
+                </li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>You have not enrolled in any courses.</p>
+    {% endif %}
         </div>
         <div class="right-siderbar">
             <div class = "imp-links">
@@ -404,87 +392,7 @@
         </div>
 
 
-
-<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
-<script>
-    var socket = io.connect('http://' + document.domain + ':' + location.port);
-    var room = "{{ room }}";
-
-    // Function to scroll chat to the bottom
-    function scrollToBottom() {
-        var chatBox = document.querySelector('#chat-box');
-        chatBox.scrollTop = chatBox.scrollHeight;
-    }
-
-    // Scroll to bottom initially when the chat loads
-    scrollToBottom();
-
-    // Join the room for the private chat
-    socket.emit('join', room);
-
-    // Function to send message
-    function sendMessage() {
-        var messageContent = document.querySelector('#messageInput').value;
-        if (messageContent.trim() !== '') {
-            socket.emit('send_private_message', {
-                room: room,
-                message: messageContent
-            });
-            document.querySelector('#messageInput').value = '';  // Clear input field
-            scrollToBottom();
-        }
-    }
-
-    // Event listener for send button click
-    document.querySelector('#sendButton').addEventListener('click', function(event) {
-        event.preventDefault();
-        sendMessage();
-    });
-
-    // Event listener for Enter key press
-    document.querySelector('#messageInput').addEventListener('keydown', function(event) {
-        if (event.key === 'Enter') {
-            event.preventDefault();
-            sendMessage();
-        }
-    });
-
-    // Listen for new private messages in real-time
-    socket.on('receive_private_message', function(data) {
-        var chatBox = document.querySelector('#chat-box');
-        var newMessage = `<p class="${data.sender == '{{ session['username'] }}' ? 'sent' : 'received'}">
-                             <strong>${data.sender}:</strong> ${data.message} 
-                             <em>(${data.timestamp})</em>
-                          </p>`;
-        chatBox.innerHTML += newMessage;
-        scrollToBottom();  // Scroll to the bottom when new message arrives
-    });
-
-    // Typing indicator
-    var typingIndicator = document.querySelector('#typing-indicator');
-    var timeout;
-
-    document.querySelector('#messageInput').addEventListener('input', function() {
-        socket.emit('typing', { room: room });
-        clearTimeout(timeout);
-        timeout = setTimeout(function() {
-            socket.emit('stop_typing', { room: room });
-        }, 1000);
-    });
-
-    socket.on('user_typing', function() {
-        typingIndicator.classList.add('active');
-    });
-
-    socket.on('user_stopped_typing', function() {
-        typingIndicator.classList.remove('active');
-    });
-
-    // Scroll to bottom on initial page load
-    window.onload = function() {
-        scrollToBottom();
-    };
-</script>
-
+        
 </body>
 </html>
+
