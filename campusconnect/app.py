@@ -1,29 +1,43 @@
-from flask import Flask, render_template, request, redirect, url_for, session, jsonify
+from flask import Flask, render_template, request, redirect, url_for, session, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
+from openai_api import get_university_recommendations 
 from flask_socketio import SocketIO, send, join_room, leave_room, emit
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_migrate import Migrate
 import os
+import re
 import random
+from datetime import datetime
+
+from datetime import date
 import string
 from werkzeug.utils import secure_filename
 from flask import g
 from flask import flash
 from werkzeug.utils import secure_filename
 from datetime import datetime
+from flask_socketio import SocketIO, emit, join_room, leave_room
 from sqlalchemy.exc import IntegrityError
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///advanced_platform.db'  # Update with your database URL
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-app.config['UPLOAD_FOLDER'] = 'static/videos'
+app.config['VIDEOS_FOLDER'] = 'static/videos'
 app.config['REEL_FOLDER'] = 'static/reels'
-app.config['UPLOAD_FOLDER'] = 'static/images/profile_pics'
-app.config['UPLOAD_FOLDER'] = 'static/images'
+app.config['PROFILE_FOLDER'] = 'static/profile_pics'
+app.config['COURSE_VIDEO_FOLDER'] = 'static/courses'
+app.config['COURSE_RESOURCE_FOLDER'] = 'static/course_resources'
+app.config['COURSE_ASSIGNMENT_FOLDER'] = 'static/course_assignments'
+app.config['COURSE_INSTRUCTOR_FOLDER'] = 'static/course_instructors'
+app.config['COURSE_THUMBNAIL_FOLDER'] = 'static/courses_thumbnail'
+app.config['COURSE_VIDEO_FOLDER'] = 'static/courses'
 app.config['UPLOAD_FOLDER'] = os.path.join('static', 'uploads')
 app.secret_key = 'super_secret_key'
+app.config['ALLOWED_EXTENSIONS'] = set()  # Empty set allows all file types
 
-ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif'}
+
+
+
 
 
 db = SQLAlchemy(app)
@@ -34,14 +48,21 @@ friends = db.Table('friends',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
     db.Column('friend_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
-
+# Association table for likes
+likes = db.Table('likes',
+    db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
+    db.Column('reel_id', db.Integer, db.ForeignKey('reel.id'), primary_key=True)
+)
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String(50), unique=True, nullable=False)
+    username = db.Column(db.String(80), unique=True, nullable=False)
     email = db.Column(db.String(120), unique=True, nullable=False)
     profile_pic = db.Column(db.String(120), nullable=True)
     password_hash = db.Column(db.String(128))
+    liked_reels = db.relationship('Reel', secondary=likes, backref='liked_by', lazy='dynamic')
     webinars = db.relationship('Webinar', backref='creator', lazy=True)
+    courses_uploaded = db.relationship('Course', backref='uploader_user', lazy=True)  
+
 
     
     # New GPA fields for classes 9 to 12
@@ -119,12 +140,202 @@ class HelperRequest(db.Model):
     receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_helper_requests')
 
 
+class UserChallenge(db.Model):
+    __tablename__ = 'user_challenge'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+    completion_date = db.Column(db.Date, nullable=False)
 
-# Reel Model (SQLAlchemy)
-class Reel(db.Model):
+    # Relationships (optional)
+
+
+
+class Course(db.Model):
+    __tablename__ = 'course'
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    category = db.Column(db.String(50), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    uploader_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # This refers to the User model
+    thumbnail = db.Column(db.String(120), nullable=True)  
+    slug = db.Column(db.String(10), unique=True, nullable=False)  # Add slug field
+    # New Fields
+    introduction = db.Column(db.Text, nullable=True)  # Plain text field for Introduction
+    course_outline = db.Column(db.Text, nullable=True)  # Plain text field for Course Outline
+    # Relationships to the new tables
+    resources = db.relationship('CourseResource', backref='course', lazy=True)  
+    assignments = db.relationship('CourseAssignment', backref='course', lazy=True)  
+    instructors = db.relationship('CourseInstructor', backref='course', lazy=True)
+    videos = db.relationship('CourseVideo', backref='course_video', lazy=True)  
+    course_length = db.Column(db.String(8), nullable=True)  # Format: HH:MM:SS
+    upload_time = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    uploader = db.relationship('User', backref='uploaded_courses')  # Add this relationship
+
+
+
+    def generate_slug(self):
+        if not self.slug:
+            self.slug = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+            while Course.query.filter_by(slug=self.slug).first():
+                self.slug = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+
+    # Call this method when a new course instance is created
+    def __init__(self, *args, **kwargs):
+        super(Course, self).__init__(*args, **kwargs)
+        self.generate_slug()
+
+
+class CourseVideo(db.Model):
+    __tablename__ = 'course_video'
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(120), nullable=False)
     filename = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text, nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+
+    # Use a string reference for the relationship
+    course = db.relationship('Course', backref='videos_list', lazy=True)
+
+class CourseProgress(db.Model):
+    __tablename__ = 'course_progress'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+    remaining_time = db.Column(db.String(8), nullable=False)  # Format: HH:MM:SS
+    last_updated = db.Column(db.DateTime, default=datetime.utcnow)
+
+    user = db.relationship('User', backref='progresses')
+    course = db.relationship('Course', backref='progresses')
+
+
+class CourseResource(db.Model):
+    __tablename__ = 'course_resource'
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(120), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+
+class CourseAssignment(db.Model):
+    __tablename__ = 'course_assignment'
+    id = db.Column(db.Integer, primary_key=True)
+    filename = db.Column(db.String(120), nullable=False)
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+
+
+class CourseInstructor(db.Model):
+    __tablename__ = 'course_instructor'
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(120), nullable=False)
+    profile_link = db.Column(db.String(255), nullable=True)
+    fb_link = db.Column(db.String(255), nullable=True)
+    linkedin_link = db.Column(db.String(255), nullable=True)
+    photo_filename = db.Column(db.String(255), nullable=True)  # Add this field
+    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+
+
+
+
+#####################################################################                REEELS   START           #####################################################################
+
+@app.route('/delete_course/<slug>', methods=['POST'])
+def delete_course(slug):
+    course = Course.query.filter_by(slug=slug).first()
+    
+    try:
+        # Delete related course videos, resources, assignments, and instructors
+        CourseVideo.query.filter_by(course_id=course.id).delete()
+        CourseResource.query.filter_by(course_id=course.id).delete()
+        CourseAssignment.query.filter_by(course_id=course.id).delete()
+        CourseInstructor.query.filter_by(course_id=course.id).delete()
+
+        # Delete the course itself
+        db.session.delete(course)
+        db.session.commit()
+        flash('Course deleted successfully!', 'success')
+    
+    except IntegrityError:
+        db.session.rollback()
+        flash('An error occurred while deleting the course.', 'error')
+    
+    return redirect(url_for('made_courses'))
+
+
+class Reel(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    title = db.Column(db.String(120), nullable=False)
+    description = db.Column(db.Text, nullable=True)
+    filename = db.Column(db.String(120), nullable=False)
+    likes = db.Column(db.Integer, default=0)
+    shares = db.Column(db.Integer, default=0)
+    visibility = db.Column(db.String(20), nullable=False)  # 'Public', 'Friends', 'Private'
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # The uploader
+    tags = db.Column(db.String(120), nullable=True)
+    comments = db.relationship('ReelComment', backref='reel', lazy=True)
+    
+    # Add slug field
+    slug = db.Column(db.String(10), unique=True, nullable=False)
+
+    # Ensure each reel has a unique slug
+    def generate_slug(self):
+        if not self.slug:
+            self.slug = self._generate_unique_slug()
+
+    def _generate_unique_slug(self):
+        slug = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        while Reel.query.filter_by(slug=slug).first():
+            slug = ''.join(random.choices(string.ascii_letters + string.digits, k=10))
+        return slug
+
+
+
+
+
+class ReelComment(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    content = db.Column(db.Text, nullable=False)
+    reel_id = db.Column(db.Integer, db.ForeignKey('reel.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Adding a reference to the user
+
+
+
+
+
+
+
+
+
+
+
+
+#####################################################################                REEELS   END           #####################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # Moved `db.create_all()` to the correct place inside the app context
 
@@ -151,12 +362,33 @@ class Video(db.Model):
     filename = db.Column(db.String(120), nullable=False)
     category = db.Column(db.String(50), nullable=False)
     tags = db.Column(db.String(120), nullable=True)
-    thumbnail = db.Column(db.String(120), nullable=True)
     privacy = db.Column(db.String(50), nullable=False, default='public')
     uploader_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     approved = db.Column(db.Boolean, default=False)
+    unique_id = db.Column(db.String(10), unique=True, nullable=False)
+
     uploader = db.relationship('User', backref=db.backref('videos', lazy=True))
 
+    
+    def __init__(self, *args, **kwargs):
+        super(Video, self).__init__(*args, **kwargs)
+        if not self.unique_id:
+            self.unique_id = self.generate_unique_id()
+
+    @staticmethod
+    def generate_unique_id(length=10):
+        characters = string.ascii_letters + string.digits
+        return ''.join(random.choice(characters) for _ in range(length))
+    
+    def get_reaction_counts(self):
+        like_count = Reaction.query.filter_by(video_id=self.id, reaction_type='like').count()
+        love_count = Reaction.query.filter_by(video_id=self.id, reaction_type='love').count()
+        haha_count = Reaction.query.filter_by(video_id=self.id, reaction_type='haha').count()
+        return {
+            'like': like_count,
+            'love': love_count,
+            'haha': haha_count
+        }
 
 class Server(db.Model):
     __tablename__ = 'server'
@@ -183,6 +415,7 @@ class Server(db.Model):
 
 
 
+
 class ServerMembers(db.Model):
     __tablename__ = 'server_members'
     server_id = db.Column(db.Integer, db.ForeignKey('server.id'), primary_key=True)
@@ -192,8 +425,9 @@ class Message(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'))
-    group_id = db.Column(db.Integer, db.ForeignKey('group.id'))
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey('group.id'), nullable=False)
+    sender = db.relationship('User', backref='user_messages')
 
     user = db.relationship('User', backref='messages')
     group = db.relationship('Group', backref='messages')
@@ -208,6 +442,27 @@ group_members = db.Table('group_members',
     db.Column('group_id', db.Integer, db.ForeignKey('group.id'), primary_key=True),
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True)
 )
+
+
+class Mentorship(db.Model):
+    __tablename__ = 'mentorship'
+    id = db.Column(db.Integer, primary_key=True)
+    mentor_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    mentee_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    start_date = db.Column(db.Date)
+    end_date = db.Column(db.Date)
+    mentor = db.relationship('User', foreign_keys=[mentor_id])
+    mentee = db.relationship('User', foreign_keys=[mentee_id])
+
+
+    @property
+    def duration(self):
+        if self.start_date and self.end_date:
+            delta = self.end_date - self.start_date
+            weeks = delta.days // 7
+            days = delta.days % 7
+            return f"{weeks} weeks" if weeks else f"{days} days"
+        return None
 
 
 class Reaction(db.Model):
@@ -245,6 +500,18 @@ class PrivateMessage(db.Model):
 
     sender = db.relationship('User', foreign_keys=[sender_id], backref='sent_private_messages')
     receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_private_messages')
+
+
+class VideoWatchTime(db.Model):
+    __tablename__ = 'video_watch_time'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    video_id = db.Column(db.Integer, db.ForeignKey('course_video.id'), nullable=False)
+    watch_time = db.Column(db.Integer, default=0)  # Time in seconds
+
+    # Relationships
+    user = db.relationship('User', backref='watched_videos')
+    video = db.relationship('CourseVideo', backref='watch_times')
 
 
 class ServerPost(db.Model):
@@ -292,172 +559,173 @@ users_in_rooms = {}
 def index():
     return render_template('index.html')
 
-# Example: Register a new user
-# Example: Register a new user
-# Example: Register a new user
-@app.route('/register',  methods=['GET' , 'POST'])
+def is_valid_password(password):
+    # Define the pattern for strong passwords
+    pattern = r"^(?=.*[A-Z])(?=.*[a-z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"
+    # Check if the password matches the pattern
+    return bool(re.match(pattern, password))
+
+@app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form['username']
         email = request.form['email']
         password = request.form['password']
-        
+
+        username = username.capitalize()
+
+        # Validate password strength
+        if not is_valid_password(password):
+            return 'Password must contain at least one uppercase letter, one lowercase letter, one number, one special character, and be at least 8 characters long.'
+
         # Check if the email already exists
         existing_user = User.query.filter_by(email=email).first()
         if existing_user:
-            message = 'Email already exists. Please choose a different email.'
-            return render_template('register.html', message=message, username=username, password=password)
+            return 'Email already exists. Please choose a different email.'
 
         # Check if the username already exists
         existing_user = User.query.filter_by(username=username).first()
         if existing_user:
-            message = 'Username already exists. Please choose a different username.'
-            return render_template('register.html', message=message, username=username, password=password)
-        
-        emailVerify()
+            return 'Username already exists. Please choose a different username.'
 
         # Create and save the new user
         new_user = User(username=username, email=email)
         new_user.set_password(password)  # Hash the password
         db.session.add(new_user)
-        
-       
         try:
             db.session.commit()
         except IntegrityError:
             db.session.rollback()
-            message = 'An error occurred while trying to register. Please try again.'
-            return render_template('register.html', message=message, username=username, password=password)
-         # Store both username and user_id in the session
+            return 'An error occurred while trying to register. Please try again.'
+
         session['username'] = username
-        session['user_id'] = new_user.id  # Store user ID in the session
+        session['user_id'] = new_user.id
         session['friends'] = []  # Initialize friends list as empty for a new user
-        return render_template('verify.html')
+        return redirect(url_for('public_feed'))
+
     return render_template('register.html')
-
-
-
-def emailVerify():
-    code = random.randint(100000, 999999)
-    print(" \n \n \n \n code is : " + str(code) + " \n \n \n \n \n")
-    
-
-#  Sending Email for verification
-    smtp_port = 587
-    session['generated_code'] = code
-
-    sender_email = "campusconnect426@gmail.com"
-    receiver_email = request.form['email']  # Recipient's email address
-    password = "hxlt vkhr ibao fwfy"  #  gamil app-specific password
-    
-    print ( " \n  \n \n  "+  receiver_email  + " \n \n \n ")
-
-    subject = " Verfy your Account ( Campu connect )"
-    body = "your verification code is " +  str(code) +" please enter this code to verify your account"
-    text = f"Subject: {subject}\n\n{body}"
-    server = smtplib.SMTP("smtp.gmail.com", smtp_port)
-    server.starttls()
-    server.set_debuglevel(1)  # Show detailed connection info
-    server.login(sender_email, password)
-    server.sendmail(sender_email, receiver_email, text)
-    print("Email sent to:", receiver_email)
-    server.quit()
-    print("Quitiing the SMTP")
-
-    return redirect(url_for('verify'))
-
-
-
-@app.route('/verify' , methods = ['POST'])
-def verify():
-    render_template('verify.html')
-    sent_code = request.form['code']
-    generated_code =session.get('generated_code')
-    if sent_code == str(generated_code):
-
-          session.pop('verification_code', None)
-          return render_template("verify.html" , message = "Sucessfully validated")
-
-    else:
-          return render_template('verify.html' , message = "code did not match" )
-    
-
-
-@app.route('/add_info', methods=['GET', 'POST'])
-def add_info():
-    if request.method == 'POST':
-        # Proceed with processing form data
-        user = User.query.filter_by(username=session['username']).first()
-        
-        # Fetch data from the form
-        gpa_class_9 = request.form['gpa_9']
-        gpa_class_10 = request.form['gpa_10']
-        gpa_class_11 = request.form['gpa_11']
-        gpa_class_12 = request.form['gpa_12']
-        sat_score = request.form['sat_score']
-        
-        # Update user attributes
-        user.gpa_class_9 = gpa_class_9
-        user.gpa_class_10 = gpa_class_10
-        user.gpa_class_11 = gpa_class_11
-        user.gpa_class_12 = gpa_class_12
-        user.sat_score = sat_score
-        
-        # Commit changes to the database
-        db.session.commit()
-        
-        return redirect(url_for('public_feed')) 
-
-    # If GET request, render the form
-    return render_template('Add_info.html')
-
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
+        username = request.form['username'].capitalize()
         password = request.form['password']
-        
-        # Retrieve the user based on the username
         user = User.query.filter_by(username=username).first()
 
         if user and user.check_password(password):
-            # Store username, user ID, and friends list in the session
+            # Store both username and user_id in the session
             session['username'] = username
             session['user_id'] = user.id  # Store user ID in the session
             session['friends'] = [friend.username for friend in user.friends]  # Initialize friends list in session
-            
-            # Directly access GPA attributes from the user object
-            user_gpa_9 = user.gpa_class_9
-            user_gpa_10 = user.gpa_class_10
-            user_gpa_11 = user.gpa_class_11
-            user_gpa_12 = user.gpa_class_12
-            user_sat_score = user.sat_score
-            
-            # Check if any required fields are missing
-            if (
-                user_gpa_9 is None or 
-                user_gpa_10 is None or 
-                user_gpa_11 is None or 
-                user_gpa_12 is None or 
-                user_sat_score is None
-            ):
-                return redirect(url_for('add_info'))
-            else:
-                return redirect(url_for('public_feed'))  # Redirect to public feed instead of dashboard
+            return redirect(url_for('public_feed'))  # Redirect to public feed instead of dashboard
         else:
-            # If login fails, show an error message
-            message = "Oops! Wrong Username or Password."
-            return render_template('login.html', message=message, username=username, password=password)
-    
-    # Render the login page for GET requests
+            return 'Invalid credentials'
+
     return render_template('login.html')
 
 
-def allowed_file(filename):
-    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+import random
+from flask import session
+from itertools import cycle
 
+# Global variables to control chunk rotation and stop condition
+chunk_rotation_iterator = None
+last_chunk_order = None
+rotation_stopped = False  # Flag to indicate whether rotation has stopped
+
+@app.route('/courses')
+def courses():
+    global chunk_rotation_iterator, last_chunk_order, rotation_stopped
+
+    # Fetch courses from the database, ordered by upload time (most recent first)
+    courses = Course.query.order_by(Course.upload_time.desc()).all()
+
+    # Determine chunk size dynamically based on the total number of courses
+    total_courses = len(courses)
+    chunk_size = max(2, total_courses // 5)  # Minimum chunk size is 2
+
+    # Divide courses into chunks
+    chunks = [courses[i:i + chunk_size] for i in range(0, len(courses), chunk_size)]
+
+    # Shuffle courses within each chunk
+    for chunk in chunks:
+        random.shuffle(chunk)
+
+    if rotation_stopped:
+        # If rotation is stopped, maintain the last chunk order
+        rotated_chunks = last_chunk_order
+    else:
+        # Initialize or update the global iterator for rotating chunks
+        if not chunk_rotation_iterator:
+            chunk_rotation_iterator = cycle(range(len(chunks)))
+
+        # Get the next chunk rotation order
+        rotation_index = next(chunk_rotation_iterator)
+
+        # Rotate chunks: Bring the selected chunk to the front
+        rotated_chunks = chunks[rotation_index:] + chunks[:rotation_index]
+
+        # Check if the current rotated order matches the previous one
+        if rotated_chunks == last_chunk_order:
+            rotation_stopped = True  # Stop further rotation
+        else:
+            last_chunk_order = rotated_chunks  # Update the last chunk order
+
+    # Flatten the rotated and shuffled chunks into a single list
+    shuffled_courses = [course for chunk in rotated_chunks for course in chunk]
+
+    # Debugging output (optional)
+    print(f"Rotated Chunks Order: {rotated_chunks}")
+    print(f"Shuffled Courses: {[course.title for course in shuffled_courses]}")
+
+    # Render the courses page
+    return render_template('courses.html', courses=shuffled_courses)
+
+
+
+
+
+@app.route('/get_username_suggestions', methods=['GET'])
+def get_username_suggestions():
+    query = request.args.get('query', '')
+    user_id = session.get('user_id')  # Assume the user is logged in
+
+    if not user_id or not query:
+        return jsonify({'suggestions': []})
+
+    # Find friends of the logged-in user whose username matches the query
+    friends_list = db.session.query(User.username).join(
+        friends, friends.c.friend_id == User.id
+    ).filter(
+        friends.c.user_id == user_id, 
+        User.username.ilike(f'{query}%')
+    ).limit(10).all()
+
+    suggestions = [{'username': friend.username} for friend in friends_list]
+
+    return jsonify({'suggestions': suggestions})
+
+
+def allowed_file(filename):
+    # Check if file extension is in allowed extensions
+    return '.' in filename and (filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS'] or not app.config['ALLOWED_EXTENSIONS'])
+
+
+@app.route('/handle_helper_request/<int:request_id>', methods=['POST'])
+def handle_helper_request(request_id):
+    data = request.get_json()
+    action = data.get('action')
+    request_item = HelperRequest.query.get(request_id)
+    
+    if request_item and request_item.receiver_id == session['user_id']:
+        if action == 'accept':
+            request_item.status = 'accepted'
+        elif action == 'reject':
+            request_item.status = 'rejected'
+        db.session.commit()
+        return jsonify({'status': 'success'}), 200
+    return jsonify({'status': 'error'}), 400
 
 
 @app.route('/profile', methods=['GET', 'POST'])
@@ -477,7 +745,7 @@ def profile():
                 profile_pic = request.files['profile_pic']
                 if profile_pic:
                     filename = secure_filename(profile_pic.filename)
-                    profile_pic.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    profile_pic.save(os.path.join(app.config['PROFILE_FOLDER'], filename))
                     user.profile_pic = filename
             
             db.session.commit()  # Save all updates to the database
@@ -485,170 +753,393 @@ def profile():
         
         # Assign a default profile picture if the user hasn't uploaded one
         user_profile_pic = user.profile_pic if user.profile_pic else 'default.jpg'
-        homeicon = "homeicon.png"
-        return render_template('profile.html', user=user, user_profile_pic=user_profile_pic , homeicon=homeicon)
+        
+        return render_template('profile.html', user=user, user_profile_pic=user_profile_pic)
     
     return redirect(url_for('login'))
 
-#Anam le lekheko profile_feed ko images ko lagi
-@app.route('/public_feed')
-def show_myimage():
-    if 'username' in session:
-        user = User.query.filter_by(username=session['username']).first()
+
+
+#####################################################################                REEELS   START           #####################################################################
+#####################################################################                REEELS   START           #####################################################################
+#####################################################################                REEELS   START           #####################################################################
+#####################################################################                REEELS   START           #####################################################################
+#####################################################################                REEELS   START           #####################################################################
+
+
+
+def randomize_courses(courses):
+    """
+    Randomize courses based on upload time and a random factor.
+    """
+    def calculate_weight(course):
+        # Calculate recency in seconds
+        recency_seconds = (datetime.utcnow() - course.upload_time).total_seconds()
+
+        # Invert recency to prioritize newer courses
+        time_weight = max(1, 1 / recency_seconds) if recency_seconds > 0 else 1
+
+        # Add a random factor
+        random_weight = random.uniform(0.8, 1.2)  # Introduces some randomness
+
+        # Final weight combines recency and randomness
+        return time_weight * random_weight
+
+    # Assign a weight to each course
+    courses_with_weights = [
+        {"course": course, "weight": calculate_weight(course)}
+        for course in courses
+    ]
+
+    # Sort by weight in descending order
+    randomized_courses = sorted(courses_with_weights, key=lambda x: x["weight"], reverse=True)
+
+    # Extract and return courses only
+    return [item["course"] for item in randomized_courses]
+
+@app.route('/challenges')
+def challenges():
+    user_id = session.get('user_id')
+
+    # Get the search query and section from the request
+    section = request.args.get('section', 'available')
+
+    # Initialize empty lists for both sections
+    available_courses = []
+    user_challenges = []
+
+    if section == 'available':
+        # Fetch available courses not yet added to challenges
+        available_courses = Course.query.filter(
+            ~Course.id.in_(
+                db.session.query(UserChallenge.course_id).filter_by(user_id=user_id)
+            )
+        ).all()
+        # Randomize available courses
+        randomized_courses = randomize_courses(available_courses)
     else:
-        user = None  # If no user is logged in, set to None
+        # Fetch user challenges
+        user_challenges = db.session.query(UserChallenge).join(Course).filter(
+            UserChallenge.user_id == user_id
+        ).all()
 
-    notification = "notification.png"
-    inbox = "chaticon.png"
-    video = "videoicon.png"
-    search = "search.png"
-    friends = "friendsicon.png"
-    group = "servericon.png"
-    courses = "coursesicon.png"
-    notificationbell = "notificationbell.png"
-    webinar = "webinar.png"
-    chat = "inbox.png"
-    reels = "video.png"
-    homeicon = "homeicon.png"
-    profileicon = "profileicon.png"
-    helpersicon ="helpers.png"
-    ai = "ai.png"
-    scholarshipicon = "scholarshipicon.png"
-    photo = "photo.png"
-    livevideo = "live-video.png"
-    user_profile_pic = user.profile_pic if user and user.profile_pic else 'default.jpg'
-        
+        # Update statuses for user challenges
+        for challenge in user_challenges:
+            # Skip updating status if it's already "Time Overdue"
+            if challenge.status == "Time Overdue":
+                continue
+
+            # Check if the course is already completed
+            if challenge.status != "Completed":
+                completion_datetime = datetime.combine(challenge.completion_date, challenge.completion_time)
+                current_datetime = datetime.now()
+
+                if current_datetime > completion_datetime:
+                    challenge.status = "Time Overdue"
+                else:
+                    challenge.status = "Not Completed"
+
+                db.session.commit()  # Save status changes to the database
+
+    # Render the challenges template with current section and query
     return render_template(
-        'public_feed.html',
-        user=user,
-        user_profile_pic=user_profile_pic,
-        notification=notification,
-        inbox=inbox,
-        video=video,
-        search=search,
-        friends = friends,
-        group = group,
-        courses = courses,
-        notificationbell = notificationbell,
-        webinar = webinar,
-        chat = chat,
-        reels = reels,
-        homeicon = homeicon,
-        profileicon = profileicon,
-        ai = ai,
-        helpersicon = helpersicon,
-        scholarshipicon = scholarshipicon,
-        photo = photo,
-        livevideo = livevideo,
-
+        'challenges.html',
+        available_courses=randomized_courses if section == 'available' else [],
+        current_section=section
     )
 
-#Scholarship search
-@app.route('/scholarshipsearch')
-def scholarshipsearch():
-    if 'username' in session:
-        user = User.query.filter_by(username=session['username']).first()
-    else:
-        user = None
 
-    # Define all image variables
-    notification = "notification.png"
-    inbox = "chaticon.png"
-    video = "videoicon.png"
-    search = "search.png"
-    friends = "friendsicon.png"
-    group = "servericon.png"
-    courses = "coursesicon.png"
-    notificationbell = "notificationbell.png"
-    webinar = "webinar.png"
-    chat = "inbox.png"
-    reels = "video.png"
-    homeicon = "homeicon.png"
-    profileicon = "profileicon.png"
-    helpersicon = "helpers.png"
-    ai = "ai.png"
-    scholarshipicon = "scholarshipicon.png"
-    photo = "photo.png"
-    livevideo = "live-video.png"
-    user_profile_pic = user.profile_pic if user and user.profile_pic else 'default.jpg'
-        
-    return render_template(
-        'scholarshipsearch.html',
-        user=user,
-        user_profile_pic=user_profile_pic,
-        notification=notification,
-        inbox=inbox,
-        video=video,
-        search=search,
-        friends=friends,
-        group=group,
-        courses=courses,
-        notificationbell=notificationbell,
-        webinar=webinar,
-        chat=chat,
-        reels=reels,
-        homeicon=homeicon,
-        profileicon=profileicon,
-        ai=ai,
-        helpersicon=helpersicon,
-        scholarshipicon=scholarshipicon,
-        photo=photo,
-        livevideo=livevideo,
-    )
 
-@app.route('/<university_name>')
-def university_page(university_name):
-    # Check if the user is logged in and retrieve the user object
-    user = User.query.filter_by(username=session['username']).first() if 'username' in session else None
+@app.route('/search_courses', methods=['GET'])
+def search_courses():
+    query = request.args.get('query', '').strip()
+    user_id = session.get('user_id')
+
+    if not user_id:
+        return redirect(url_for('login'))
+
+    # Perform the search query
+    if query:
+        # Fetch matching courses
+        matching_courses = Course.query.filter(Course.title.ilike(f"%{query}%")).all()
+
+        # Separate into Available and User Challenges
+
+
+        return render_template(
+            'challenges.html'
+        )
+
+    return redirect(url_for('challenges'))
+
+
+@app.route('/like_reel', methods=['POST'])
+def like_reel():
+    user_id = session.get('user_id')  # Assume user is logged in and their ID is stored in the session
+    reel_id = request.json.get('reel_id')
     
-    # Default profile picture if the user does not have one
-    user_profile_pic = user.profile_pic if user and user.profile_pic else 'default.jpg'
+    if not user_id or not reel_id:
+        return jsonify({'success': False, 'message': 'User ID and Reel ID are required'}), 400
 
-    # Asset dictionary to handle university-specific and common images
-    assets = {
-        "notification": "notification.png",
-        "inbox": "chaticon.png",
-        "video": "videoicon.png",
-        "search": "search.png",
-        "friends": "friendsicon.png",
-        "group": "servericon.png",
-        "courses": "coursesicon.png",
-        "notificationbell": "notificationbell.png",
-        "webinar": "webinar.png",
-        "chat": "inbox.png",
-        "reels": "video.png",
-        "homeicon": "homeicon.png",
-        "profileicon": "profileicon.png",
-        "helpersicon": "helpers.png",
-        "ai": "ai.png",
-        "scholarshipicon": "scholarshipicon.png",
-        "photo": "photo.png",
-        "livevideo": "live-video.png",
-    }
+    user = User.query.get(user_id)
+    reel = Reel.query.get(reel_id)
+
+    if not user or not reel:
+        return jsonify({'success': False, 'message': 'User or Reel not found'}), 404
+
+    if reel in user.liked_reels:
+        # If the user has already liked the reel, remove the like
+        user.liked_reels.remove(reel)
+        reel.likes -= 1
+        db.session.commit()
+        return jsonify({'success': True, 'liked': False, 'likes': reel.likes})
+    else:
+        # Otherwise, add the like
+        user.liked_reels.append(reel)
+        reel.likes += 1
+        db.session.commit()
+        return jsonify({'success': True, 'liked': True, 'likes': reel.likes})
 
 
-    # Ensure the university name is correctly formatted for template rendering
-    if university_name.endswith('.html'):
-        university_name = university_name[:-5]  # Strip '.html' extension for safety
+@app.route('/get_course_videos/<int:course_id>', methods=['GET'])
+def get_course_videos(course_id):
+    # Retrieve the course videos
+    courses_videos = CourseVideo.query.filter_by(course_id=course_id).all()
+    
+    # Serialize the course videos into a list of dictionaries
+    videos_list = [{
+        'id': video.id,
+        'filename': video.filename,
+        'description': video.description
+    } for video in courses_videos]
 
-    # Get the specific university image or a default one
-    university_image = f"{university_name}.jpeg"
+    # Return as JSON
+    return jsonify(videos=videos_list)
 
-    harvarduniversity = "harvarduniversity.jpeg"
-    stanforduniversity = "stanforduniversity.jpeg"
-    texasstateuniversity = "texastateuniversity.jpeg"
+@app.route('/delete_comment', methods=['POST'])
+def delete_comment():
+    user_id = session.get('user_id')  # Assuming user is logged in and their ID is stored in the session
+    comment_id = request.json.get('comment_id')
+    
+    if not user_id or not comment_id:
+        return jsonify({'success': False, 'message': 'User ID and Comment ID are required'}), 400
 
-    # Render the template with context
-    return render_template(
-        f'{university_name}.html',
-        user=user,
-        user_profile_pic=user_profile_pic,
-        university_image=university_image,
-        harvarduniversity = harvarduniversity,
-        stanforduniversity = stanforduniversity,
-        texasstateuniversity = texasstateuniversity,
-        **assets  # Unpack assets to be used in the template
-    )
+    comment = ReelComment.query.get(comment_id)
+
+    if not comment or comment.user_id != user_id:
+        return jsonify({'success': False, 'message': 'Unauthorized or comment not found'}), 403
+
+    db.session.delete(comment)
+    db.session.commit()
+    return jsonify({'success': True, 'message': 'Comment deleted successfully'})
+
+@app.route('/review_contents/<int:course_id>')
+def review_contents(course_id):
+    # Query the course resources and assignments based on the course_id
+    course_resources = CourseResource.query.filter_by(course_id=course_id).all()
+    course_assignments = CourseAssignment.query.filter_by(course_id=course_id).all()
+
+    # Pass the resources and assignments to the template
+    return render_template('review_contents.html', 
+                           course_resources=course_resources, 
+                           course_assignments=course_assignments)
+
+
+@app.route('/comment_reel', methods=['POST'])
+def comment_reel():
+    user_id = session.get('user_id')  # Assume user is logged in and their ID is stored in the session
+    reel_id = request.json.get('reel_id')
+    comment_text = request.json.get('comment')
+
+    if not user_id or not reel_id or not comment_text:
+        return jsonify({'success': False, 'message': 'Reel ID, User ID, and comment text are required'}), 400
+
+    # Create the comment
+    new_comment = ReelComment(content=comment_text, reel_id=reel_id, user_id=user_id)
+    db.session.add(new_comment)
+    db.session.commit()
+
+    return jsonify({'success': True, 'comment_id': new_comment.id})
+
+
+@app.route('/share_reel', methods=['POST'])
+def share_reel():
+    reel_id = request.json.get('reel_id')
+    if not reel_id:
+        return jsonify({'success': False, 'message': 'Reel ID is required'}), 400
+
+    reel = Reel.query.get(reel_id)
+    if not reel:
+        return jsonify({'success': False, 'message': 'Reel not found'}), 404
+
+    reel.shares += 1
+    db.session.commit()
+    return jsonify({'success': True, 'shares': reel.shares})
+
+@app.route('/upload_course_video', methods=['GET', 'POST'])
+def upload_course_video():
+    if request.method == 'POST':
+        title = request.form['title']
+        description = request.form['description']
+        category = request.form.get('category')
+        uploader_id = session.get('user_id')
+        course_length = request.form.get('course_length')  # New field
+
+        # Handle thumbnail upload
+        thumbnail_file = request.files.get('thumbnail')
+        thumbnail_filename = None
+        if thumbnail_file:
+            thumbnail_filename = secure_filename(thumbnail_file.filename)
+            thumbnail_path = os.path.join(app.config['COURSE_THUMBNAIL_FOLDER'], thumbnail_filename)
+            thumbnail_file.save(thumbnail_path)
+
+        # Save course details
+        new_course = Course(
+            title=title,
+            description=description,
+            category=category,
+            uploader_id=uploader_id,
+            thumbnail=thumbnail_filename,
+            course_length=course_length 
+           
+        )
+        db.session.add(new_course)
+        db.session.commit()
+
+        # Debugging: Check if resource files are processed
+        for resource_file in request.files.getlist('resource_file[]'):
+            if resource_file:
+                resource_filename = secure_filename(resource_file.filename)
+                resource_path = os.path.join(app.config['COURSE_RESOURCE_FOLDER'], resource_filename)
+                resource_file.save(resource_path)  # Save file
+                print(f"Saved resource file to: {resource_path}")  # Debugging
+
+                new_resource = CourseResource(filename=resource_filename, course_id=new_course.id)
+                db.session.add(new_resource)
+
+        # Debugging: Check if assignment files are processed
+        for assignment_file in request.files.getlist('assignment_file[]'):
+            if assignment_file:
+                assignment_filename = secure_filename(assignment_file.filename)
+                assignment_path = os.path.join(app.config['COURSE_ASSIGNMENT_FOLDER'], assignment_filename)
+                assignment_file.save(assignment_path)  # Save file
+                print(f"Saved assignment file to: {assignment_path}")  # Debugging
+
+                new_assignment = CourseAssignment(filename=assignment_filename, course_id=new_course.id)
+                db.session.add(new_assignment)
+
+        # Debugging: Check if instructor photos are processed
+        instructor_names = request.form.getlist('instructor_name[]')
+        profile_links = request.form.getlist('instructor_profile_link[]')
+        fb_links = request.form.getlist('instructor_fb_link[]')
+        linkedin_links = request.form.getlist('instructor_linkedin_link[]')
+        instructor_photos = request.files.getlist('instructor_photo[]')
+
+        for name, profile_link, fb_link, linkedin_link, photo in zip(
+            instructor_names, profile_links, fb_links, linkedin_links, instructor_photos
+        ):
+            if photo:
+                photo_filename = secure_filename(photo.filename)
+                photo_path = os.path.join(app.config['COURSE_INSTRUCTOR_FOLDER'], photo_filename)
+                photo.save(photo_path)  # Save file
+                print(f"Saved instructor photo to: {photo_path}")  # Debugging
+
+                instructor = CourseInstructor(
+                    name=name,
+                    profile_link=profile_link,
+                    fb_link=fb_link,
+                    linkedin_link=linkedin_link,
+                    photo_filename=photo_filename,
+                    course_id=new_course.id
+                )
+                db.session.add(instructor)
+
+                video_titles = request.form.getlist('video_title[]')
+                
+        video_descriptions = request.form.getlist('video_description[]')
+        video_files = request.files.getlist('video_file[]')
+        
+        for video_title, video_description, video_file in zip(video_titles, video_descriptions, video_files):
+            if video_file:
+                video_filename = secure_filename(video_file.filename)
+                video_path = os.path.join(app.config['COURSE_VIDEO_FOLDER'], video_filename)
+                video_file.save(video_path)
+                print(f"Video saved to {video_path}")
+
+                course_video = CourseVideo(
+                    course_id=new_course.id,
+                    title=video_title,
+                    filename=video_filename,
+                    description=video_description
+                )
+                db.session.add(course_video)
+
+        db.session.commit()
+
+        return redirect(url_for('courses'))
+
+    return render_template('upload_course.html')
+
+
+def is_valid_course_length(length):
+    pattern = r"^\d{2}:\d{2}:\d{2}$"  # HH:MM:SS format
+    return re.match(pattern, length) is not None
+
+def update_challenge_status():
+    # Fetch all challenges with "In Progress" status
+    in_progress_challenges = UserChallenge.query.filter_by(status='In Progress').all()
+    current_datetime = datetime.now()
+
+    for challenge in in_progress_challenges:
+        challenge_datetime = datetime.combine(challenge.completion_date, challenge.completion_time)
+        if current_datetime >= challenge_datetime:
+            challenge.status = 'Course Completed'
+            db.session.commit()
+
+@app.before_request
+def before_request():
+    update_challenge_status()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+@app.route('/search_essays', methods=['GET', 'POST'])
+def search_essays():
+    essays = []  # Default empty list for essays
+    search_query = ''  # Default empty search query
+
+    if request.method == 'POST':
+        search_query = request.form.get('search_query', '').strip()
+
+        if search_query:
+            # Query the database for essays matching the topi
+            flash('Please enter a topic to search.', 'error')
+
+    return render_template('search_essays.html', essays=essays, search_query=search_query)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -692,10 +1183,6 @@ def server(server_id):
     return render_template('server.html', server=server, members=server.members)
 
 
-
-
-
-
 def get_current_user():
     if 'username' in session:
         return User.query.filter_by(username=session['username']).first()
@@ -704,6 +1191,56 @@ def get_current_user():
 @app.before_request
 def before_request():
     g.current_user = get_current_user()
+
+
+@app.route('/course/<slug>')
+def view_course(slug):
+    course = Course.query.filter_by(slug=slug).first_or_404()
+
+    # Fetch all videos associated with the course
+    course_videos = CourseVideo.query.filter_by(course_id=course.id).all()
+
+    # Fetch resources and assignments
+    course_resources = CourseResource.query.filter_by(course_id=course.id).all()
+    course_assignments = CourseAssignment.query.filter_by(course_id=course.id).all()
+
+    # Fetch instructors
+    course_instructors = CourseInstructor.query.filter_by(course_id=course.id).all()
+
+    # Serialize course videos
+    videos_list = [{
+        'id': video.id,
+        'title': video.title,
+        'filename': video.filename,
+        'description': video.description
+    } for video in course_videos]
+
+    # Fetch the current user (adjust this based on your session management)
+    current_user = get_current_user()  # Ensure this function returns the current user
+
+    # Fetch related courses based on the same category
+    related_courses = Course.query.filter(Course.category == course.category).all()
+
+    # Check if the current user has progress saved for this course
+    progress = CourseProgress.query.filter_by(user_id=current_user.id, course_id=course.id).first()
+    remaining_time = progress.remaining_time if progress else course.course_length
+
+    return render_template(
+        'view_course.html',
+        course=course,
+        videos=videos_list,
+        resources=course_resources,
+        assignments=course_assignments,
+        instructors=course_instructors,
+        user=current_user,
+        related_courses=related_courses,
+        remaining_time=remaining_time,  # Pass remaining time for the timer
+        progress=progress  # Pass progress for UI adjustments
+    )
+
+
+
+
 
 
 @app.route('/servers')
@@ -718,6 +1255,36 @@ def servers():
     joined_servers = Server.query.filter(Server.members.contains(user)).all()
 
     return render_template('servers.html', owned_servers=owned_servers, joined_servers=joined_servers)
+
+@app.route('/my_courses')
+def my_courses():
+    return render_template('mycourses.html')
+
+@app.route('/enrolled_courses')
+def enrolled_courses():
+    user_id = session.get('user_id')
+    user = User.query.get_or_404(user_id)
+    enrolled_courses = user.enrolled_courses  # Retrieve the user's enrolled courses
+    return render_template('enrolled_courses.html', enrolled_courses=enrolled_courses)
+
+@app.route('/made_courses')
+def made_courses():
+    user_id = session.get('user_id')
+    made_courses = Course.query.filter_by(uploader_id=user_id).all()
+    return render_template('made_courses.html', made_courses=made_courses)
+
+@app.route('/enroll_in_course/<int:course_id>', methods=['POST', 'GET'])
+def enroll_in_course(course_id):
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    course = Course.query.get(course_id)
+
+    if course not in user.enrolled_courses:
+        user.enrolled_courses.append(course)
+        db.session.commit()
+
+    return redirect(url_for('enrolled_courses'))
+
 
 
 
@@ -789,6 +1356,7 @@ def create_server():
         return redirect(url_for('servers'))  # Redirect to servers list
 
     return render_template('create_server.html')
+
 
 
 @app.route('/join_server', methods=['POST'])
@@ -889,6 +1457,35 @@ def give_star(receiver_id):
     db.session.commit()
 
     return jsonify({'status': 'success'}), 200  # Success: Star given
+
+
+@app.route('/complete_course', methods=['POST'])
+def complete_course():
+    data = request.get_json()
+    user_id = data.get('user_id')
+    course_id = data.get('course_id')
+
+    # Fetch or create progress entry
+    progress = CourseProgress.query.filter_by(user_id=user_id, course_id=course_id).first()
+    user_challenge = UserChallenge.query.filter_by(user_id=user_id, course_id=course_id).first()
+
+    if progress:
+        # Skip if challenge status is "Time Overdue"
+        if user_challenge and user_challenge.status == "Time Overdue":
+            return jsonify({'status': 'error', 'message': 'Challenge is overdue and cannot be completed'}), 403
+
+        progress.remaining_time = "00:00:00"
+        progress.is_completed = True  # Mark as completed
+        db.session.commit()
+
+        # Update challenge status if it exists and is not "Time Overdue"
+        if user_challenge and user_challenge.status != "Time Overdue":
+            user_challenge.status = "Completed"
+            db.session.commit()
+
+        return jsonify({'status': 'success', 'message': 'Course marked as completed'})
+    else:
+        return jsonify({'status': 'error', 'message': 'Progress not found'}), 404
 
 
 @app.route('/create_group', methods=['POST'])
@@ -1056,6 +1653,95 @@ def ai_search():
 #-----------------------------------------------WEBINAR----------------------------------------------
 #-----------------------------------------------WEBINAR----------------------------------------------
 
+@app.route('/get_friends', methods=['GET'])
+def get_friends():
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+    friends = user.friends.all()  # Assuming User has a 'friends' relationship
+    return jsonify(friends=[{'username': friend.username} for friend in friends])
+
+
+@app.route('/send_reel', methods=['POST'])
+def send_reel():
+    data = request.json
+    reel_slug = data['reel_id']
+    friends_usernames = data['friends_usernames']  # Receive an array of friend usernames
+    
+    # Get the reel by its slug
+    reel = Reel.query.filter_by(slug=reel_slug).first()
+    
+    if not reel:
+        return jsonify(success=False, message='Reel not found'), 404
+
+    # Send the reel to each friend
+    for friend_username in friends_usernames:
+        friend = User.query.filter_by(username=friend_username).first()
+        if friend:
+            send_reel_to_friend(reel.id, friend.id)  # Use the same function to send the reel
+
+    return jsonify(success=True)
+
+def send_reel_to_friend(reel_id, friend_id):
+    # Fetch the reel by its ID to get the slug
+    reel = Reel.query.get(reel_id)
+    
+    if reel:
+        # Use slug for the URL instead of reel_id
+        reel_url = url_for('view_single_reel', slug=reel.slug, _external=True)
+        
+        # Get the current user (sender)
+        sender_id = session.get('user_id')
+        
+        # Create a message with the reel link
+        message_content = f"Check out this reel: {reel_url}"
+
+        # Add the message to the database
+        new_message = PrivateMessage(
+            sender_id=sender_id,
+            receiver_id=friend_id,
+            content=message_content
+        )
+        
+        db.session.add(new_message)
+        db.session.commit()
+
+        return True
+    return False  # Handle the case where the reel wasn't found
+
+
+
+@app.route('/reel/<slug>')
+def view_single_reel(slug):
+    user_id = session.get('user_id')
+    reel = Reel.query.filter_by(slug=slug).first_or_404()
+
+    if reel.visibility == 'Private' and reel.user_id != user_id:
+        return "This reel is private.", 403
+
+    if reel.visibility == 'Friends' and reel.user_id != user_id:
+        user = User.query.get(user_id)
+        if user_id not in [friend.id for friend in user.friends]:
+            return "This reel is only visible to friends.", 403
+
+    is_liked = False
+    if user_id:
+        user = User.query.get(user_id)
+        is_liked = reel in user.liked_reels
+
+    reel_data = {
+        'id': reel.id,
+        'title': reel.title,
+        'description': reel.description,
+        'filename': reel.filename,
+        'likes': reel.likes,
+        'shares': reel.shares,
+        'comments_count': len(reel.comments),
+        'is_liked': is_liked,
+        'visibility': reel.visibility,
+        'uploader_id': reel.user_id,
+    }
+
+    return render_template('single_reel.html', reel=reel_data)
 
 
 
@@ -1068,10 +1754,71 @@ def ai_search():
 
 
 
+# Route to send a request for Mentorship
+@app.route('/request_mentorship/<int:receiver_id>', methods=['POST'])
+def request_mentorship(receiver_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    sender = User.query.filter_by(username=session['username']).first()
+    receiver = User.query.get(receiver_id)
+
+    if not receiver or receiver == sender:
+        return redirect(url_for('search'))
+
+    # Check if the Mentorship request already exists
+    existing_request = HelperRequest.query.filter_by(sender_id=sender.id, receiver_id=receiver.id, helper_type='mentorship').first()
+    if not existing_request:
+        # Create a new Mentorship request
+        new_request = HelperRequest(sender_id=sender.id, receiver_id=receiver.id, helper_type='mentorship', status='pending')
+        db.session.add(new_request)
+        db.session.commit()
+        return f'Mentorship request sent to {receiver.username}!'
+    else:
+        return 'Mentorship request already sent.'
+
+@app.route('/mentors')
+def mentors():
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    user = User.query.filter_by(username=session['username']).first()
+
+    # Fetch mentorship requests
+    sent_requests = HelperRequest.query.filter_by(sender_id=user.id, helper_type='mentorship').all()
+    received_requests = HelperRequest.query.filter_by(receiver_id=user.id, helper_type='mentorship').all()
+
+    # Fetch existing mentorships
+    mentorships_as_mentor = Mentorship.query.filter_by(mentor_id=user.id).all()
+    mentorships_as_mentee = Mentorship.query.filter_by(mentee_id=user.id).all()
+
+    # Collect user IDs involved in existing mentorships
+    mentorship_user_ids = {m.mentee_id for m in mentorships_as_mentor} | {m.mentor_id for m in mentorships_as_mentee}
+
+    return render_template('mentors.html', 
+                           sent_requests=sent_requests, 
+                           received_requests=received_requests,
+                           mentorships_as_mentor=mentorships_as_mentor,
+                           mentorships_as_mentee=mentorships_as_mentee,
+                           mentorship_user_ids=mentorship_user_ids, now=date.today())
 
 
+@app.route('/handle_mentorship_request/<int:request_id>', methods=['POST'])
+def handle_mentorship_request(request_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
 
+    action = request.json.get('action')
+    mentorship_request = HelperRequest.query.get(request_id)
 
+    if mentorship_request and mentorship_request.receiver_id == User.query.filter_by(username=session['username']).first().id:
+        if action == 'accept':
+            mentorship_request.status = 'accepted'
+        elif action == 'reject':
+            mentorship_request.status = 'rejected'
+        db.session.commit()
+        return '', 200
+    return '', 400
 
 
 
@@ -1115,6 +1862,52 @@ def create_webinar():
     # If it's a GET request, render the form
     return render_template('create_webinar.html')
 
+@app.route('/set_mentorship_relation/<int:request_id>', methods=['POST'])
+def set_mentorship_relation(request_id):
+    if 'username' not in session:
+        return redirect(url_for('login'))
+
+    data = request.get_json()
+    relation = data.get('relation')  # 'mentor' or 'mentee'
+
+    user = User.query.filter_by(username=session['username']).first()
+    mentorship_request = HelperRequest.query.get(request_id)
+
+    if not mentorship_request or mentorship_request.status != 'accepted':
+        return 'Invalid request', 400
+
+    if relation not in ['mentor', 'mentee']:
+        return 'Invalid relation', 400
+
+    # Determine the other user's ID
+    if user.id == mentorship_request.sender_id:
+        other_user_id = mentorship_request.receiver_id
+    else:
+        other_user_id = mentorship_request.sender_id
+
+    # Check if mentorship already exists
+    existing_mentorship = Mentorship.query.filter(
+        ((Mentorship.mentor_id == user.id) & (Mentorship.mentee_id == other_user_id)) |
+        ((Mentorship.mentor_id == other_user_id) & (Mentorship.mentee_id == user.id))
+    ).first()
+
+    if existing_mentorship:
+        return 'Mentorship already established', 400
+
+    # Establish mentorship based on selected relation
+    if relation == 'mentor':
+        mentor_id = user.id
+        mentee_id = other_user_id
+    else:  # 'mentee'
+        mentor_id = other_user_id
+        mentee_id = user.id
+
+    # Create the mentorship
+    new_mentorship = Mentorship(mentor_id=mentor_id, mentee_id=mentee_id)
+    db.session.add(new_mentorship)
+    db.session.commit()
+
+    return 'Relation set successfully', 200
 
 
 @app.route('/save_webinar', methods=['POST'])
@@ -1227,19 +2020,20 @@ def about_webinar(webinar_id):
 
 
 
-# Route to view received LOR and Counsel requests
 @app.route('/helpers_section')
 def helpers_section():
-    if 'username' not in session:
+    # Ensure the user is logged in
+    if 'user_id' not in session:
         return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    
+    # Filter only LOR and Counsel requests where the current user is the sender or receiver
+    sent_requests = HelperRequest.query.filter_by(sender_id=user_id).filter(HelperRequest.helper_type.in_(['lor', 'counsel'])).all()
+    received_requests = HelperRequest.query.filter_by(receiver_id=user_id).filter(HelperRequest.helper_type.in_(['lor', 'counsel'])).all()
+    
+    return render_template('helpers_section.html', sent_requests=sent_requests, received_requests=received_requests)
 
-    user = User.query.filter_by(username=session['username']).first()
-
-    # Fetch received requests for LOR and Counsel
-    lor_requests = HelperRequest.query.filter_by(receiver_id=user.id, helper_type='lor', status='pending').all()
-    counsel_requests = HelperRequest.query.filter_by(receiver_id=user.id, helper_type='counsel', status='pending').all()
-
-    return render_template('helpers_section.html', lor_requests=lor_requests, counsel_requests=counsel_requests)
 
 # Route to handle response to LOR or Counsel requests
 @app.route('/respond_helper_request/<int:request_id>/<response>', methods=['POST'])
@@ -1280,7 +2074,7 @@ def edit_profile():
                 if profile_pic and allowed_file(profile_pic.filename):
                     filename = secure_filename(profile_pic.filename)
                     # Save the file in the designated folder
-                    profile_pic.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
+                    profile_pic.save(os.path.join(app.config['PROFILE_FOLDER'], filename))
                     # Update user profile picture
                     user.profile_pic = filename
                 else:
@@ -1374,6 +2168,8 @@ def get_user_profile(user_id):
     user = User.query.get_or_404(user_id)
     return jsonify({'id': user.id, 'username': user.username, 'email': user.email, 'profile_pic': user.profile_pic or 'default.jpg'})
 
+
+
 @app.route('/add_member_to_group', methods=['POST'])
 def add_member_to_group():
     data = request.json
@@ -1386,6 +2182,7 @@ def add_member_to_group():
         db.session.commit()
         return '', 200
     return '', 400
+
 
 
 
@@ -1424,43 +2221,120 @@ def reels():
 
     return render_template('reels.html', user=user, reels=reels)
 
+from random import choices  # Ensure this import is present
+
 
 @app.route('/upload_reel', methods=['GET', 'POST'])
 def upload_reel():
     if request.method == 'POST':
-        reel_file = request.files['reel_file']
-        reel_title = request.form['reel_title']
+        # Process the uploaded file and form data
+        if 'reel_file' not in request.files:
+            return "No file part", 400
 
-        if reel_file and reel_title:
-            filename = secure_filename(reel_file.filename)
-            reel_file.save(os.path.join(app.config['REEL_FOLDER'], filename))
+        file = request.files['reel_file']
+        if file.filename == '':
+            return "No selected file", 400
 
-            # Save reel details in the database
-            new_reel = Reel(title=reel_title, filename=filename)
+        if file:
+            # Securely save the file
+            filename = secure_filename(file.filename)
+            file.save(os.path.join(app.config['REEL_FOLDER'], filename))
+
+            # Get form data
+            title = request.form.get('title')
+            description = request.form.get('description')
+            tags = request.form.get('tags')
+            visibility = request.form.get('visibility')  # 'Public', 'Friends'
+            user_id = session.get('user_id')  # Get the current user's ID
+
+            # Save the reel to the database
+            new_reel = Reel(title=title, description=description, filename=filename, tags=tags, visibility=visibility, user_id=user_id)
+            new_reel.generate_slug()  # Generate unique slug
             db.session.add(new_reel)
             db.session.commit()
 
-            flash('Reel uploaded successfully!')
-            return redirect(url_for('upload_reel'))
+            return "Reel uploaded successfully", 200
 
+    # If GET request, render the upload form
     return render_template('upload_reel.html')
+
+
+
+import math
+from random import shuffle
 
 @app.route('/public_feed')
 def public_feed():
     if 'username' not in session:
         return redirect(url_for('login'))
 
+    # Retrieve the user
     user = User.query.filter_by(username=session['username']).first()
-    videos = Video.query.order_by(Video.id.desc()).all()  # Fetch all videos in descending order
+    videos = Video.query.order_by(Video.id.desc()).all()  # Order videos by upload time (latest first)
 
-    # Fetch received friend requests
+    # Separate videos by visibility
+    public_videos = [video for video in videos if video.privacy == 'public']
+    friends_videos = [video for video in videos if video.privacy == 'friends' and video.uploader in user.friends]
+    user_videos = [video for video in videos if video.uploader_id == user.id]
+
+    # Combine all visible videos, ensuring no duplicates
+    visible_videos = list({video.id: video for video in public_videos + friends_videos + user_videos}.values())
+
+    # Determine the number of chunks
+    total_videos = len(visible_videos)
+    if total_videos <= 10:
+        num_chunks = 5
+    elif total_videos <= 100:
+        num_chunks = 10
+    else:
+        num_chunks = 50
+
+    # Determine videos per chunk
+    videos_per_chunk = math.ceil(total_videos / num_chunks)
+
+    # Divide into chunks
+    chunks = [visible_videos[i:i + videos_per_chunk] for i in range(0, total_videos, videos_per_chunk)]
+
+    # Shuffle videos within each chunk
+    for chunk in chunks:
+        shuffle(chunk)
+
+    # Track the number of refreshes (can use session or another mechanism)
+    if 'refresh_count' not in session:
+        session['refresh_count'] = 0
+    session['refresh_count'] += 1
+
+    # Flatten the rotated chunks into a single list
+
+ 
     received_requests = FriendRequest.query.filter_by(receiver_id=user.id, status='pending').all()
 
-    # Define user_profile_pic
     user_profile_pic = user.profile_pic if user.profile_pic else 'default.jpg'
 
-    # Pass user_profile_pic to the template
-    return render_template('public_feed.html', user=user, user_profile_pic=user_profile_pic, videos=videos, received_requests=received_requests)
+
+
+    return render_template(
+        'public_feed.html',
+        user=user,
+        user_profile_pic=user_profile_pic,
+        received_requests=received_requests,
+    )
+
+
+@app.route('/get_reaction_users/<int:video_id>/<reaction_type>', methods=['GET'])
+def get_reaction_users(video_id, reaction_type):
+    reactions = Reaction.query.filter_by(video_id=video_id, reaction_type=reaction_type).all()
+    users = [{'username': reaction.user.username} for reaction in reactions]
+    return jsonify({'users': users})
+
+@app.route('/post/<unique_id>')
+def view_video_by_unique_id(unique_id):
+    video = Video.query.filter_by(unique_id=unique_id).first_or_404()
+    user_id = session.get('user_id')
+    user = User.query.get(user_id)
+
+
+    return render_template('view_video.html', video=video)
 
 
 @app.route('/upload_video', methods=['GET', 'POST'])
@@ -1475,28 +2349,19 @@ def upload_video():
         tags = request.form['tags']
         privacy = request.form['privacy']
         video_file = request.files['video_file']
-        thumbnail = request.files.get('thumbnail')
 
-        # Ensure the directory exists
-        video_dir = os.path.join(app.config['UPLOAD_FOLDER'])
+        # Ensure the directory for videos exists
+        video_dir = app.config['VIDEOS_FOLDER']
         if not os.path.exists(video_dir):
             os.makedirs(video_dir)
 
+        # Save the uploaded video file
         if video_file:
-            # Secure the filename and save the video file
             filename = secure_filename(video_file.filename)
             video_path = os.path.join(video_dir, filename)
             video_file.save(video_path)
 
-            # Handle the thumbnail
-            if thumbnail:
-                thumbnail_filename = secure_filename(thumbnail.filename)
-                thumbnail_path = os.path.join(app.config['UPLOAD_FOLDER'], thumbnail_filename)
-                thumbnail.save(thumbnail_path)
-            else:
-                # Generate thumbnail from video if none provided (using a placeholder for now)
-                thumbnail_filename = 'default_thumbnail.jpg'
-
+            # Get the uploader and save video details in the database
             uploader = User.query.filter_by(username=session['username']).first()
             new_video = Video(
                 title=title, 
@@ -1505,12 +2370,12 @@ def upload_video():
                 category=category, 
                 uploader_id=uploader.id,
                 tags=tags,
-                thumbnail=thumbnail_filename,
                 privacy=privacy
             )
             db.session.add(new_video)
             db.session.commit()
-            return redirect(url_for('view_video', video_id=new_video.id))
+
+            return redirect(url_for('view_video_by_unique_id', unique_id=new_video.unique_id))
     
     return render_template('upload_video.html')
 
@@ -1553,27 +2418,49 @@ def upload_photo():
     return render_template('upload_photo.html')
 
 
+
 @app.route('/react_video/<int:video_id>', methods=['POST'])
 def react_video(video_id):
-    if 'username' not in session:
-        return jsonify({'status': 'unauthorized'}), 401
+    user_id = session.get('user_id')
+    if not user_id:
+        return jsonify({'status': 'error', 'message': 'User not logged in'}), 403
 
-    user = User.query.filter_by(username=session['username']).first()
-    reaction_type = request.json.get('reaction_type')
-    existing_reaction = Reaction.query.filter_by(video_id=video_id, user_id=user.id).first()
+    data = request.get_json()
+    reaction_type = data.get('reaction_type')
+    if reaction_type not in ['like', 'love', 'haha']:
+        return jsonify({'status': 'error', 'message': 'Invalid reaction type'}), 400
+
+    existing_reaction = Reaction.query.filter_by(video_id=video_id, user_id=user_id).first()
 
     if existing_reaction:
-        existing_reaction.reaction_type = reaction_type
+        if existing_reaction.reaction_type == reaction_type:
+            db.session.delete(existing_reaction)  # Toggle off
+        else:
+            existing_reaction.reaction_type = reaction_type  # Change reaction type
+            db.session.add(existing_reaction)
     else:
-        new_reaction = Reaction(video_id=video_id, user_id=user.id, reaction_type=reaction_type)
+        new_reaction = Reaction(video_id=video_id, user_id=user_id, reaction_type=reaction_type)
         db.session.add(new_reaction)
 
-    db.session.commit()
+    db.session.commit()  # Save changes to database
 
-    # Get the updated number of reactions for this video
-    reaction_count = Reaction.query.filter_by(video_id=video_id).count()
+    # Fetch the updated counts directly from the database
+    like_count = Reaction.query.filter_by(video_id=video_id, reaction_type='like').count()
+    love_count = Reaction.query.filter_by(video_id=video_id, reaction_type='love').count()
+    haha_count = Reaction.query.filter_by(video_id=video_id, reaction_type='haha').count()
 
-    return jsonify({'status': 'success', 'reaction_count': reaction_count}), 200
+    return jsonify({
+        'status': 'success',
+        'reactions': {
+            'like': like_count,
+            'love': love_count,
+            'haha': haha_count
+        },
+        'user_reaction': reaction_type
+    })
+
+
+
 
 
 @app.route('/share_video/<int:video_id>', methods=['POST'])
@@ -1619,33 +2506,15 @@ def comment_video(video_id):
     return jsonify({'status': 'success'}), 200
 
 
-@app.route('/view_reels')
-def view_reels():
-    reels = Reel.query.all()  # Fetch all uploaded reels from the database
-    return render_template('view_reels.html', reels=reels)
-
-@app.route('/video/<int:video_id>', methods=['GET', 'POST'])
+@app.route('/view_video/<int:video_id>')
 def view_video(video_id):
-    video = Video.query.get_or_404(video_id)
-    uploader = User.query.get(video.uploader_id)
-    comments = Comment.query.filter_by(video_id=video.id).all()
-    
-    if request.method == 'POST':
-        if 'reaction' in request.form:
-            reaction_type = request.form['reaction']
-            user = User.query.filter_by(username=session['username']).first()
-            new_reaction = Reaction(video_id=video.id, user_id=user.id, reaction_type=reaction_type)
-            db.session.add(new_reaction)
-            db.session.commit()
-        elif 'comment' in request.form:
-            comment_content = request.form['comment']
-            user = User.query.filter_by(username=session['username']).first()
-            new_comment = Comment(video_id=video.id, user_id=user.id, content=comment_content)
-            db.session.add(new_comment)
-            db.session.commit()
-    
-    return render_template('view_video.html', video=video, uploader=uploader, comments=comments)
+    # Fetch the video details from the database using the video_id
+    video = Video.query.get(video_id)
+    if not video:
+        abort(404)  # Return a 404 error if the video is not found
 
+    # Render the video details in the view_video.html template
+    return render_template('view_video.html', video=video)
 
 
 @app.route('/notifications')
@@ -1668,20 +2537,51 @@ def logout():
     return redirect(url_for('login'))
 
 
-@app.route('/search', methods=['GET', 'POST'])
-def search():
-    if request.method == 'POST':
-        search_query = request.form['search_query']
-        try:
-            results = User.query.filter(User.username.contains(search_query)).all()
-        except Exception as e:
-            print(f"Error during user search: {e}")
-            return "An error occurred during search", 500
-        
-        return render_template('search.html', results=results)
-    
-    return render_template('search.html')
 
+@app.route('/search', methods=['POST'])
+def search():
+    if 'user_id' not in session:
+        return redirect(url_for('login'))
+
+    search_query = request.form.get('search_query', '').strip()
+    user_id = session['user_id']
+    
+    # Perform search for users excluding self
+    results = User.query.filter(User.username.ilike(f"%{search_query}%")).filter(User.id != user_id).all()
+
+    # Retrieve all helper requests (LOR, Counsel, Mentorship) involving the current user
+    helper_requests = HelperRequest.query.filter(
+        ((HelperRequest.sender_id == user_id) | (HelperRequest.receiver_id == user_id)) &
+        (HelperRequest.helper_type.in_(['lor', 'counsel', 'mentorship']))
+    ).all()
+
+    # Organize requests by user and type for easy lookup in the template
+    requests_status = {}
+    for user_request in helper_requests:  # Renamed `request` to `user_request`
+        other_user_id = user_request.receiver_id if user_request.sender_id == user_id else user_request.sender_id
+        if other_user_id not in requests_status:
+            requests_status[other_user_id] = {}
+        requests_status[other_user_id][user_request.helper_type] = {
+            'status': user_request.status,
+            'is_sender': user_request.sender_id == user_id
+        }
+
+    return render_template('search.html', results=results, requests_status=requests_status)
+
+
+
+@app.route('/save_mentorship_dates/<int:mentorship_id>', methods=['POST'])
+def save_mentorship_dates(mentorship_id):
+    data = request.get_json()
+    start_date = datetime.strptime(data['start_date'], '%Y-%m-%d')
+    end_date = datetime.strptime(data['end_date'], '%Y-%m-%d')
+    
+    mentorship = Mentorship.query.get(mentorship_id)
+    mentorship.start_date = start_date
+    mentorship.end_date = end_date
+    db.session.commit()
+    
+    return jsonify({'status': 'success'}), 200
 
 
 @app.route('/counsel_request/<int:receiver_id>', methods=['POST'])
@@ -1740,7 +2640,6 @@ def view_profile(user_id):
 
 
 
-
 @app.route('/group_chat/<int:group_id>', methods=['GET', 'POST'])
 def group_chat(group_id):
     if 'username' not in session:
@@ -1749,8 +2648,6 @@ def group_chat(group_id):
     group = Group.query.get_or_404(group_id)
     user = User.query.filter_by(username=session['username']).first()
 
-    if user not in group.members:
-        return "You are not a member of this group", 403
 
     if request.method == 'POST':
         message_content = request.form.get('message')
@@ -1759,16 +2656,15 @@ def group_chat(group_id):
             db.session.add(new_message)
             db.session.commit()
 
-    messages = Message.query.filter_by(group_id=group.id).order_by(Message.timestamp).all()
+    return render_template('group_chat.html', group=group)
 
-    return render_template('group_chat.html', group=group, messages=messages)
 
-# Add socketio events for group chat
+
 @socketio.on('send_group_message')
 def handle_group_message(data):
     group_id = data['group_id']
     message = data['message']
-    username = session['username']
+    username = session.get('username')
 
     # Save message in the database
     group = Group.query.get(group_id)
@@ -1778,15 +2674,15 @@ def handle_group_message(data):
         db.session.add(new_message)
         db.session.commit()
 
-    # Emit the message to the group
+    # Emit the message to all users in the group room
+    room = f'group_{group_id}'
     socketio.emit('new_group_message', {
         'username': username,
         'message': message,
-        'group_id': group_id
-    }, room=f'group_{group_id}')
-
-
+        'timestamp': new_message.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+    }, room=room)
 # app.py
+
 @app.route('/user/<int:user_id>')
 def user_profile(user_id):
     user = User.query.get_or_404(user_id)
@@ -1812,54 +2708,34 @@ def delete_video(video_id):
     return 'Video deleted successfully', 200
 
 
-@app.route('/chat')
-def chat():
-    if 'username' not in session:
-        return redirect(url_for('login'))
-
-    user = User.query.filter_by(username=session['username']).first()
-    friends = user.friends  # Fetch user's friends
-    groups = user.groups    # Fetch user's groups
-    return render_template('chat.html', user=user, friends=friends, groups=groups)
-
 @app.route('/chat/<int:user_id>', methods=['GET', 'POST'])
 def private_chat(user_id):
     if 'username' not in session:
         return redirect(url_for('login'))
 
-    current_user = User.query.filter_by(username=session['username']).first()
     chat_user = User.query.get_or_404(user_id)
-
-    room = f'private_{min(current_user.id, chat_user.id)}_{max(current_user.id, chat_user.id)}'
 
     # Check if a message is sent
     if request.method == 'POST':
         message_content = request.form['message']
         if message_content:
             # Save the new message to the database
-            new_message = PrivateMessage(
+            new_message = Message(
                 content=message_content,
-                sender_id=current_user.id,
                 receiver_id=chat_user.id
             )
             db.session.add(new_message)
             db.session.commit()
 
             # Send the message to the recipient in real-time using SocketIO
-            socketio.emit('receive_private_message', {
-                'sender': current_user.username,
+            socketio.emit('receive_message', {
                 'message': message_content,
-                'timestamp': new_message.timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-                'room': room
-            }, room=room)
+                'timestamp': new_message.timestamp.strftime('%Y-%m-%d %H:%M:%S')
+            },)
 
-    # Retrieve all private messages between the two users
-    messages = PrivateMessage.query.filter(
-        ((PrivateMessage.sender_id == current_user.id) & (PrivateMessage.receiver_id == chat_user.id)) |
-        ((PrivateMessage.sender_id == chat_user.id) & (PrivateMessage.receiver_id == current_user.id))
-    ).order_by(PrivateMessage.timestamp).all()
-
-    return render_template('private_chat.html', current_user=current_user, chat_user=chat_user, messages=messages, room=room)
+    # Retrieve all  messages between the two users
+    messages = Message.query.filter(
+    ).order_by(Message.timestamp).all()
 
 
 @app.route('/dashboard')
@@ -2017,25 +2893,13 @@ def handle_leave(data):
     leave_room(room)
     send(f"{session['username']} has left the chat", room=room)
 
-@socketio.on('send_message')
-def handle_send_message(data):
-    server_id = data['server_id']
-    username = data['username']
-    message_content = data['message']
-    
-    # Save message to the database
-    new_message = ChatMessage(content=message_content, username=username, server_id=server_id)
-    db.session.add(new_message)
-    db.session.commit()
 
-    # Broadcast the message to everyone in the room
-    emit('receive_message', {'username': username, 'message': message_content}, room=f'server_{server_id}')
+@socketio.on('join_private_chat')
+def handle_join_private_chat(data):
+    room = data.get('room')  # The unique room for this private chat
+    join_room(room)
 
 
-
-
-# Define your routes here...
-# [Your route code here...]
 
 if __name__ == '__main__':
     with app.app_context():
