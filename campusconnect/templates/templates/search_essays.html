@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Essays by Topic</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: #f3f4f6;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+    
+        /* Navbar Styling */
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1876f2;
+            padding: 5px 5%;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+    
+        .logo {
+            color: #efefef;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            text-decoration: none;
+            font-size: 1.5rem;
+        }
+    
+        .nav-left,
+        .nav-right {
+            display: flex;
+            align-items: center;
+        }
+    
+        .nav-left ul li {
+            list-style: none;
+            display: inline-block;
+        }
+    
+        .nav-left ul li img {
+            width: 28px;
+            margin: 0 15px;
+        }
+    
+        .nav-user-login img {
+            width: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+    
+        .nav-user-icon {
+            margin-left: 30px;
+            width: 40px;
+            height: 40px;
+        }
+    
+        /* Search Box Styling */
+        .search-box {
+            background: #efefef;
+            width: 80%;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+        }
+    
+        .search-box img {
+            width: 18px;
+        }
+    
+        .search-box input {
+            width: 100%;
+            background: transparent;
+            padding: 10px;
+            outline: none;
+            border: 0;
+        }
+    
+        /* Online Indicator */
+        .online {
+            position: relative;
+        }
+    
+        .online::after {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border: 2px solid #fff;
+            border-radius: 50%;
+            background-color: #41db51;
+            position: absolute;
+            top: 0;
+            right: 0;
+        }
+    
+        /* Container Layout for Sidebars and Content */
+        .container {
+            display: flex;
+            justify-content: space-between;
+            padding: 13px 5%;
+            flex: 1;
+            overflow: hidden;
+        }
+    
+        /* Left Sidebar */
+        .left-sidebar {
+            flex-basis: 10%;
+            position: sticky;
+            top: 70px;
+            align-self: flex-start;
+            height: calc(100vh - 50px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+    
+        /* Right Sidebar */
+        .right-sidebar {
+            flex-basis: 10%;
+            position: sticky;
+            top: 70px;
+            align-self: flex-start;
+            height: calc(100vh - 50px);
+            overflow-y: auto;
+            padding: 20px;
+        }
+    
+        /* Main Content */
+        .main-content {
+            flex-basis: 70%;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+    
+        /* Links in Sidebars */
+        .imp-links a {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+            color: #626262;
+            width: fit-content;
+        }
+    
+        .imp-links a img {
+            width: 25px;
+            margin-right: 15px;
+        }
+    
+        /* Common Styling for Components */
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+    
+           .search-container {
+        position: relative;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .search-container input {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+    }
+
+    .search-container button {
+        background-color: #007BFF;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        cursor: pointer;
+        border-radius: 5px;
+        font-size: 16px;
+    }
+
+    .search-container button:hover {
+        background-color: #0056b3;
+    }
+
+    .suggestions {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        right: 0;
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        max-height: 150px;
+        overflow-y: auto;
+        z-index: 100;
+    }
+
+    .suggestion-item {
+        padding: 10px;
+        cursor: pointer;
+        font-size: 14px;
+    }
+
+    .suggestion-item:hover {
+        background-color: #f0f0f0;
+    }
+        .search-container form {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+        }
+    
+        .essay-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+    
+        .essay-card h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+    
+        .essay-card p {
+            font-size: 1rem;
+            line-height: 1.6;
+        }
+    
+        .essay-card a {
+            color: #007BFF;
+            text-decoration: none;
+            font-weight: bold;
+        }
+    
+        .essay-card a:hover {
+            text-decoration: underline;
+        }
+    
+        /* Responsiveness for Tablets and Small Screens */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                padding: 0 5%;
+            }
+    
+            .main-content {
+                flex-basis: 100%;
+                margin-left: 0;
+                margin-right: 0;
+            }
+    
+            .left-sidebar,
+            .right-sidebar {
+                display: none;
+                flex-basis: 0;
+                position: static;
+            }
+    
+            nav {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                padding: 10px 5%;
+            }
+    
+            .nav-left ul {
+                display: flex;
+                justify-content: space-around;
+                width: 100%;
+                padding: 10px 0;
+            }
+    
+            .search-box {
+                display: none;
+            }
+    
+            .nav-right {
+                display: flex;
+                justify-content: flex-end;
+                width: auto;
+                margin-top: 0;
+                margin-right: 25px;
+            }
+    
+            .nav-right .search-icon {
+                display: block;
+                cursor: pointer;
+            }
+    
+            .imp-links a {
+                display: none;
+            }
+        }
+    
+        /* Responsiveness for Small Phones */
+        @media (max-width: 480px) {
+            .logo {
+                font-size: 1.2rem;
+            }
+    
+            .nav-left ul li img {
+                width: 24px;
+                margin: 0 10px;
+            }
+        }
+    </style>
+    
+
+    
+</head>
+<body>
+    <!-- Navbar -->
+    <nav>
+        <div class="nav-left">
+            <div class="logo">UniRec</div>
+            <ul>
+                <li><a href="{{ url_for('notifications') }}"><img src="{{ url_for('static', filename='images/' + notification) }}"></a></li>
+                 <li><a href="{{ url_for('chat') }}"><img src="{{ url_for('static', filename='images/' + chat) }}"></a></li>
+                <li><a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + reels) }}"></a></li>
+            
+            </ul>
+        </div>
+        <div class="nav-right">
+            <form action="{{ url_for('search') }}" method="POST">
+                <div class="search-box">
+                    <img src="{{ url_for('static', filename='images/' + search) }}">
+                    <input type="text" name="search_query" placeholder="Search..." required>
+                </div>
+            </form>
+            <div class="nav-user-icon online">
+                <img src="{{ url_for('static', filename='images/' + user_profile_pic) }}" alt="Profile Picture" width="50" height="50">
+            </div>   
+        </div>      
+        
+
+    </nav>
+
+    <div class="container">
+        <!-- Left Sidebar -->
+        <div class="left-sidebar">
+            <div class="imp-links">
+                <a href="{{ url_for('friend_list') }}"><img src="{{ url_for('static', filename='images/' + friends) }}">Friends</a>
+                <a href="{{ url_for('chat') }}"><img src="{{ url_for('static', filename='images/' + inbox) }}">Chat</a>
+                <a href="{{ url_for('notifications') }}"><img src="{{ url_for('static', filename='images/' + notificationbell) }}">Notifications</a>
+                <a href="{{ url_for('servers') }}"><img src="{{ url_for('static', filename='images/' + group) }}">Servers</a>
+                <a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + video) }}">Reels</a>
+                <a href="{{ url_for('webinar') }}"><img src="{{ url_for('static', filename='images/' + webinar) }}">Webinar</a>
+                <a href="{{ url_for('essays') }}">
+                    <img src="{{ url_for('static', filename='images/essays.png') }}" alt="Essays Icon" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;">
+                    Essays
+                </a>
+                <a href="{{ url_for('mentors') }}">
+                    <img src="{{ url_for('static', filename='images/mentor.jpg') }}" alt="Mentors Icon" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;">
+                    Mentors
+                </a>  
+                <a href="{{ url_for('challenges') }}">
+                    <img src="{{ url_for('static', filename='images/mentor.jpg') }}" alt="Challenges Icon" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;">
+                    Challenges
+                </a>
+                
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1>Search Essays by Topic</h1>
+
+            <div class="search-container">
+                <form method="POST" action="{{ url_for('search_essays') }}" id="searchForm">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        name="search_query" 
+                        placeholder="Enter a topic to search" 
+                        value="{{ search_query }}" 
+                        oninput="updateSuggestions()"
+                    >
+                    <button type="submit">Search</button>
+                </form>
+                <div id="suggestions" class="suggestions"></div>
+            </div>
+
+            <div class="results-container">
+                {% if essays %}
+                    {% for essay in essays %}
+                        <div class="essay-card">
+                            <h2>📚 Topic: {{ essay.topic }}</h2>
+                            <p>{{ essay.content[:200] }}{% if essay.content|length > 200 %}...{% endif %}</p>
+                            <p>
+                                <strong>Uploaded by:</strong> 
+                                <a href="{{ url_for('view_profile', user_id=essay.user.id) }}">
+                                    {{ essay.user.username }}
+                                </a>
+                            </p>
+                        </div>
+                    {% endfor %}
+                {% elif search_query %}
+                    <p class="no-results">No essays found matching the topic "{{ search_query }}".</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="right-sidebar">
+            <div class = "imp-links">
+                <a href="{{ url_for('public_feed') }}"><img src="{{ url_for('static', filename='images/' + homeicon) }}">Home</a>
+                <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/' + profileicon) }}">Profile</a>
+                <a href="{{ url_for('helpers_section') }}"><img src="{{ url_for('static', filename='images/' + helpersicon) }}">Helpers</a>
+                <a href="{{ url_for('scholarshipsearch') }}"><img src="{{ url_for('static', filename='images/' + scholarshipicon) }}">Scholarship Search</a>
+                <a href="{{ url_for('ai_search') }}"><img src="{{ url_for('static', filename='images/' + ai) }}">AI Search</a>
+                <a href="{{ url_for('courses') }}"><img src="{{ url_for('static', filename='images/' + courses) }}">Courses</a>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ user.username }}'s Friends</title>
+    <style>
+        /* Global Styles */
+        body {
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* Navigation Bar */
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #1876f2;
+            padding: 10px 5%;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .logo {
+            color: #efefef;
+            font-size: 1.5rem;
+            text-decoration: none;
+        }
+
+        .nav-left ul {
+            list-style: none;
+            display: flex;
+            gap: 15px;
+            padding: 0;
+            margin: 0;
+        }
+
+        .nav-left ul li img {
+            width: 28px;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            background: #efefef;
+            border-radius: 20px;
+            padding: 5px 10px;
+            width: 300px;
+        }
+
+        .search-box img {
+            width: 18px;
+            margin-right: 5px;
+        }
+
+        .search-box input {
+            border: none;
+            outline: none;
+            background: transparent;
+            flex: 1;
+            font-size: 14px;
+        }
+
+        .nav-user-icon img {
+            width: 40px;
+            border-radius: 50%;
+        }
+
+        /* Page Layout */
+        .container {
+            display: flex;
+            justify-content: space-between;
+            padding: 20px 5%;
+        }
+
+        .left-sidebar, .right-sidebar {
+            flex-basis: 20%;
+            position: sticky;
+            top: 70px;
+        }
+
+        .main-content {
+            flex-basis: 55%;
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .imp-links a {
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            color: #626262;
+            font-size: 0.95rem;
+        }
+
+        .imp-links a img {
+            width: 25px;
+            margin-right: 10px;
+        }
+
+        /* Friend List */
+        .friend-list-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .friend-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background-color: #f9f9f9;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            transition: box-shadow 0.3s ease;
+        }
+
+        .friend-card:hover {
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .friend-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .friend-card img {
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+        }
+
+        .btn {
+            padding: 8px 12px;
+            border-radius: 5px;
+            text-decoration: none;
+            color: #fff;
+            font-size: 14px;
+        }
+
+        .btn-primary {
+            background: #1876f2;
+        }
+
+        .btn-danger {
+            background: #d9534f;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .view-requests {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .left-sidebar, .right-sidebar {
+                display: none;
+            }
+
+            .main-content {
+                flex-basis: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <nav>
+        <div class="nav-left">
+            <a href="#" class="logo">UniRec</a>
+            <ul>
+                <li><a href="{{ url_for('notifications') }}"><img src="{{ url_for('static', filename='images/' + notification) }}"></a></li>
+                <li><a href="#"><img src="{{ url_for('static', filename='images/' + chat) }}"></a></li>
+                <li><a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + reels) }}"></a></li>
+            </ul>
+        </div>
+        <div class="nav-right">
+            <form action="{{ url_for('search') }}" method="POST">
+                <div class="search-box">
+                    <img src="{{ url_for('static', filename='images/' + search) }}">
+                    <input type="text" name="search_query" placeholder="Search..." required>
+                </div>
+            </form>
+            <div class="nav-user-icon">
+                <img src="{{ url_for('static', filename='images/' + user_profile_pic) }}" alt="Profile">
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Left Sidebar -->
+        <div class="left-sidebar">
+            <div class="imp-links">
+                <a href="{{ url_for('friend_list') }}"><img src="{{ url_for('static', filename='images/friends.png') }}">Friends</a>
+                <a href="{{ url_for('chat') }}"><img src="{{ url_for('static', filename='images/' + inbox) }}">Chat</a>
+                <a href="{{ url_for('notifications') }}"><img src="{{ url_for('static', filename='images/' + notificationbell) }}">Notifications</a>
+                <a href="{{ url_for('servers') }}"><img src="{{ url_for('static', filename='images/' + group) }}">Servers</a>
+                <a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + video) }}">Reels</a>
+                <a href="{{ url_for('webinar') }}"><img src="{{ url_for('static', filename='images/' + webinar) }}">Webinar</a>
+                <a href="{{ url_for('essays') }}"><img src="{{ url_for('static', filename='images/' + webinar) }}">Essays</a>
+                <a href="{{ url_for('mentors') }}">Mentors</a>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="friend-list-container">
+                <h1>{{ user.username }}'s Friends</h1>
+                {% for friend in friends %}
+                    <div class="friend-card">
+                        <div class="friend-info">
+                            <img src="{{ url_for('static', filename='images/' + (friend.profile_pic or 'default.jpg')) }}" alt="Profile">
+                            <strong>{{ friend.username }}</strong>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('view_profile', user_id=friend.id) }}" class="btn btn-primary">View Profile</a>
+                            <form action="{{ url_for('remove_friend', friend_id=friend.id) }}" method="POST" style="display:inline;">
+                                <button type="submit" class="btn btn-danger">Remove Friend</button>
+                            </form>
+                        </div>
+                    </div>
+                {% endfor %}
+                <div class="view-requests">
+                    <a href="{{ url_for('view_friend_requests') }}" class="btn btn-primary">View Friend Requests</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Sidebar -->
+        <div class="right-sidebar">
+            <div class="imp-links">
+                <a href="{{ url_for('public_feed') }}"><img src="{{ url_for('static', filename='images/' + homeicon) }}">Home</a>
+                <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/' + profileicon) }}">Profile</a>
+                <a href="{{ url_for('helpers_section') }}"><img src="{{ url_for('static', filename='images/' + helpersicon) }}">Helpers</a>
+                <a href="{{ url_for('scholarshipsearch') }}"><img src="{{ url_for('static', filename='images/' + scholarshipicon) }}">Scholarship Search</a>
+                <a href="{{ url_for('ai_search') }}"><img src="{{ url_for('static', filename='images/' + ai) }}">AI Search</a>
+                <a href="{{ url_for('webinar') }}"><img src="{{ url_for('static', filename='images/' + courses) }}">Courses</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
