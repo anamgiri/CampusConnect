@@ -548,7 +548,7 @@ button:focus {
                 <li><a href="{{ url_for('notifications') }}"></a><img src="{{ url_for('static', filename='images/' + notification) }}"></li>
                  <li><a href="{{ url_for('chat') }}"><img src="{{ url_for('static', filename='images/' + mychat) }}"></a></li>
                 <li><a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + myreels) }}"></a></li>
-            s
+            
             </ul>
         </div>
         <div class="nav-right">
@@ -662,5 +662,17 @@ button:focus {
         
 
     </div>
+     <script>
+             function toggleMenu() {  
+   var menu = document.getElementById('nav-menu');  
+   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';  
+}
+
+    
+        </script>
+
+
+    </body>
+</html>
     
         

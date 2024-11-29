@@ -486,8 +486,8 @@ button:focus {
             <a href="#" class="logo">UniRec</a>
             <ul>
                 <li><a href="{{ url_for('notifications') }}"><img src="{{ url_for('static', filename='images/' + notification) }}"></a></li>
-                <li><a href="#"><img src="{{ url_for('static', filename='images/' + chat) }}"></a></li>
-                <li><a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + reels) }}"></a></li>
+                <li><a href="#"><img src="{{ url_for('static', filename='images/' + mychat) }}"></a></li>
+                <li><a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + myreels) }}"></a></li>
             </ul>
         </div>
         <div class="nav-right">
@@ -497,7 +497,23 @@ button:focus {
             <div class="nav-user-icon online">
                 <img src="{{ url_for('static', filename='images/' + user_profile_pic) }}" alt="Profile">
             </div>
-        </div>
+                <button class="menu-toggle" onclick="toggleMenu()">  
+                <span></span>  
+                <span></span>  
+                <span></span>  
+              </button>  
+              <div class="nav-menu" id="nav-menu">  
+                <!-- additional icons here -->  
+                <a href="{{ url_for('public_feed') }}"><img src="{{ url_for('static', filename='images/' + homeicon) }}">Home</a>  
+                <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/' + profileicon) }}">Profile</a>  
+                <a href="{{ url_for('helpers_section') }}"><img src="{{ url_for('static', filename='images/' + helpersicon) }}">Helpers</a>  
+                <a href="{{ url_for('scholarshipsearch') }}"><img src="{{ url_for('static', filename='images/' + scholarshipicon) }}">Scholarship Search</a>  
+                <a href="{{ url_for('ai_search') }}"><img src="{{ url_for('static', filename='images/' + ai) }}">AI Search</a>  
+                <a href="{{ url_for('courses') }}"><img src="{{ url_for('static', filename='images/' + courses) }}">Courses</a>  
+              </div>  
+        </div>      
+        
+
     </nav>
 
     <div class="container">
@@ -553,5 +569,14 @@ button:focus {
             </div>
         </div>
     </div>
+    <script>
+        function toggleMenu() {  
+var menu = document.getElementById('nav-menu');  
+menu.style.display = menu.style.display === 'block' ? 'none' : 'block';  
+}
+
+
+   </script>
+
 </body>
 </html>
