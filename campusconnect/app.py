@@ -1,6 +1,5 @@
 from flask import Flask, render_template, request, redirect, url_for, session, jsonify, abort
 from flask_sqlalchemy import SQLAlchemy
-from openai_api import get_university_recommendations 
 from flask_socketio import SocketIO, send, join_room, leave_room, emit
 from werkzeug.security import generate_password_hash, check_password_hash
 from flask_migrate import Migrate
@@ -140,14 +139,15 @@ class HelperRequest(db.Model):
     receiver = db.relationship('User', foreign_keys=[receiver_id], backref='received_helper_requests')
 
 
-class UserChallenge(db.Model):
-    __tablename__ = 'user_challenge'
-    id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
-    course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
+#class UserChallenge(db.Model):
+ #   __tablename__ = 'user_challenge'
+  #  id = db.Column(db.Integer, primary_key=True)
+ #   user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+'''  course_id = db.Column(db.Integer, db.ForeignKey('course.id'), nullable=False)
     completion_date = db.Column(db.Date, nullable=False)
-
-    # Relationships (optional)
+    status = db.Column(db.String(50))  # Add this if missing
+    
+    # Relationships (optional) '''
 
 
 
@@ -555,6 +555,92 @@ users_in_rooms = {}
 
 
 # Routes
+
+@app.context_processor
+def inject_global_variables():
+    user = User.query.filter_by(username=session['username']).first() if 'username' in session else None
+
+    return {
+        'user': user,
+        'user_profile_pic': user.profile_pic if user and user.profile_pic else 'default.jpg',
+        'notification': "notification.png",
+        'inbox': "chaticon.png",
+        'video': "videoicon.png",
+        'search': "search.png",
+        'friends': "friendsicon.png",
+        'group': "servericon.png",
+        'courses': "coursesicon.png",
+        'notificationbell': "notificationbell.png",
+        'webinar': "webinar.png",
+        'mychat': "inbox.png",
+        'myreels': "video.png",
+        'homeicon': "homeicon.png",
+        'profileicon': "profileicon.png",
+        'helpersicon': "helpers.png",
+        'ai': "ai.png",
+        'scholarshipicon': "scholarshipicon.png",
+        'photo': "photo.png",
+        'livevideo': "live-video.png",
+        'portfolioicon' : "portfolioicon.png",
+        'resumeicon' : "resumeicon.png",
+    }
+
+@app.route('/<university_name>')
+def university_page(university_name):
+    # Check if the user is logged in and retrieve the user object
+    user = User.query.filter_by(username=session['username']).first() if 'username' in session else None
+    
+    # Default profile picture if the user does not have one
+    user_profile_pic = user.profile_pic if user and user.profile_pic else 'default.jpg'
+
+    # Asset dictionary to handle university-specific and common images
+    assets = {
+        "notification": "notification.png",
+        "inbox": "chaticon.png",
+        "video": "videoicon.png",
+        "search": "search.png",
+        "friends": "friendsicon.png",
+        "group": "servericon.png",
+        "courses": "coursesicon.png",
+        "notificationbell": "notificationbell.png",
+        "webinar": "webinar.png",
+        "chat": "inbox.png",
+        "reels": "video.png",
+        "homeicon": "homeicon.png",
+        "profileicon": "profileicon.png",
+        "helpersicon": "helpers.png",
+        "ai": "ai.png",
+        "scholarshipicon": "scholarshipicon.png",
+        "photo": "photo.png",
+        "livevideo": "live-video.png",
+    }
+
+
+    # Ensure the university name is correctly formatted for template rendering
+    if university_name.endswith('.html'):
+        university_name = university_name[:-5]  # Strip '.html' extension for safety
+
+    # Get the specific university image or a default one
+    university_image = f"{university_name}.jpeg"
+
+    harvarduniversity = "harvarduniversity.jpeg"
+    stanforduniversity = "stanforduniversity.jpeg"
+    texasstateuniversity = "texastateuniversity.jpeg"
+
+    # Render the template with context
+    return render_template(
+        f'{university_name}.html',
+        user=user,
+        user_profile_pic=user_profile_pic,
+        university_image=university_image,
+        harvarduniversity = harvarduniversity,
+        stanforduniversity = stanforduniversity,
+        texasstateuniversity = texasstateuniversity,
+        **assets  # Unpack assets to be used in the template
+    )
+
+
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -634,6 +720,32 @@ chunk_rotation_iterator = None
 last_chunk_order = None
 rotation_stopped = False  # Flag to indicate whether rotation has stopped
 
+@app.route('/chat')
+def chat():
+    return render_template('chat.html')
+
+@app.route('/essays')
+def essays():
+    return render_template('essays.html')
+
+@app.route('/challenges')
+def challenges():
+    return render_template('challenges.html')
+
+@app.route('/scholarshipsearch')
+def scholarshipsearch():
+    return render_template('scholarshipsearch.html')
+
+@app.route('/upload_essay')
+def upload_essay():
+    return render_template('upload_essay')
+
+
+
+
+
+
+
 @app.route('/courses')
 def courses():
     global chunk_rotation_iterator, last_chunk_order, rotation_stopped
@@ -661,7 +773,11 @@ def courses():
             chunk_rotation_iterator = cycle(range(len(chunks)))
 
         # Get the next chunk rotation order
-        rotation_index = next(chunk_rotation_iterator)
+        try:
+            rotation_index = next(chunk_rotation_iterator)
+        except StopIteration:
+            rotation_index = None  # or some other default value
+
 
         # Rotate chunks: Bring the selected chunk to the front
         rotated_chunks = chunks[rotation_index:] + chunks[:rotation_index]
@@ -797,8 +913,8 @@ def randomize_courses(courses):
     # Extract and return courses only
     return [item["course"] for item in randomized_courses]
 
-@app.route('/challenges')
-def challenges():
+#@app.route('/challenges')
+#def challenges():
     user_id = session.get('user_id')
 
     # Get the search query and section from the request
@@ -1085,7 +1201,7 @@ def is_valid_course_length(length):
     pattern = r"^\d{2}:\d{2}:\d{2}$"  # HH:MM:SS format
     return re.match(pattern, length) is not None
 
-def update_challenge_status():
+#def update_challenge_status():
     # Fetch all challenges with "In Progress" status
     in_progress_challenges = UserChallenge.query.filter_by(status='In Progress').all()
     current_datetime = datetime.now()
@@ -1096,8 +1212,8 @@ def update_challenge_status():
             challenge.status = 'Course Completed'
             db.session.commit()
 
-@app.before_request
-def before_request():
+#@app.before_request
+#ef before_request():
     update_challenge_status()
 
 
@@ -1459,15 +1575,15 @@ def give_star(receiver_id):
     return jsonify({'status': 'success'}), 200  # Success: Star given
 
 
-@app.route('/complete_course', methods=['POST'])
-def complete_course():
+#@app.route('/complete_course', methods=['POST'])
+#def complete_course():
     data = request.get_json()
     user_id = data.get('user_id')
     course_id = data.get('course_id')
 
     # Fetch or create progress entry
     progress = CourseProgress.query.filter_by(user_id=user_id, course_id=course_id).first()
-    user_challenge = UserChallenge.query.filter_by(user_id=user_id, course_id=course_id).first()
+#    user_challenge = UserChallenge.query.filter_by(user_id=user_id, course_id=course_id).first()
 
     if progress:
         # Skip if challenge status is "Time Overdue"
@@ -1586,8 +1702,8 @@ def ai_search():
                 f"and is involved in the following extracurricular activities: {user.eca or 'none'}."
             )
             # Call the function to get university recommendations
-            results = get_university_recommendations(profile_summary)
-            results = results.replace('\n', '<br>')  # Format for HTML display
+            #results = get_university_recommendations(profile_summary)
+        #    results = results.replace('\n', '<br>')  # Format for HTML display
 
         elif 'manual_input' in request.form:
             # Set flag to show manual input form
@@ -1609,7 +1725,7 @@ def ai_search():
                 f"and is involved in the following extracurricular activities: {eca}."
             )
             # Call the function to get university recommendations
-            results = get_university_recommendations(profile_summary)
+           # results = get_university_recommendations(profile_summary)
             results = results.replace('\n', '<br>')  # Format for HTML display
 
     return render_template('ai_search.html', user=user, results=results, manual_input=manual_input)
@@ -2292,8 +2408,11 @@ def public_feed():
     # Determine videos per chunk
     videos_per_chunk = math.ceil(total_videos / num_chunks)
 
-    # Divide into chunks
+    if videos_per_chunk == 0:
+        videos_per_chunk = 1  # Ensure videos_per_chunk is at least 1
+
     chunks = [visible_videos[i:i + videos_per_chunk] for i in range(0, total_videos, videos_per_chunk)]
+
 
     # Shuffle videos within each chunk
     for chunk in chunks:
