@@ -567,9 +567,9 @@ def inject_global_variables():
         'inbox': "chaticon.png",
         'video': "videoicon.png",
         'search': "search.png",
-        'friends': "friendsicon.png",
+        'myfriends': "friendsicon.png",
         'group': "servericon.png",
-        'courses': "coursesicon.png",
+        'mycourses': "coursesicon.png",
         'notificationbell': "notificationbell.png",
         'webinar': "webinar.png",
         'mychat': "inbox.png",
@@ -601,7 +601,7 @@ def university_page(university_name):
         "search": "search.png",
         "friends": "friendsicon.png",
         "group": "servericon.png",
-        "courses": "coursesicon.png",
+        "mycourses": "coursesicon.png",
         "notificationbell": "notificationbell.png",
         "webinar": "webinar.png",
         "chat": "inbox.png",
@@ -728,6 +728,7 @@ def chat():
 def essays():
     return render_template('essays.html')
 
+
 @app.route('/challenges')
 def challenges():
     return render_template('challenges.html')
@@ -739,6 +740,9 @@ def scholarshipsearch():
 @app.route('/upload_essay')
 def upload_essay():
     return render_template('upload_essay')
+
+
+
 
 
 
@@ -2429,6 +2433,7 @@ def public_feed():
     received_requests = FriendRequest.query.filter_by(receiver_id=user.id, status='pending').all()
 
     user_profile_pic = user.profile_pic if user.profile_pic else 'default.jpg'
+    courses = Course.query.order_by(Course.upload_time.desc()).all()
 
 
 
@@ -2437,6 +2442,7 @@ def public_feed():
         user=user,
         user_profile_pic=user_profile_pic,
         received_requests=received_requests,
+        courses = courses,
     )
 
 
