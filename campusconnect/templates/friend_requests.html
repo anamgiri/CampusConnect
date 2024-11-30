@@ -211,6 +211,48 @@
                 width: 48%;
             }
         }
+        .menu-toggle {  
+   background-color: transparent;  
+   border: none;  
+   padding: 10px;  
+   cursor: pointer;  
+   margin-left: 50px;
+}  
+  
+.menu-toggle span {  
+   display: block;  
+   width: 20px;  
+   height: 2px;  
+   background-color: #fff;  
+   margin-bottom: 5px;  
+}  
+  
+.nav-menu {  
+   display: none;  
+   position: absolute;  
+   top: 50px;  
+   margin-top: 55px;
+   right: 0;  
+   background-color: white;  
+   padding: 10px;  
+
+}  
+  
+.nav-menu a {  
+   display: block;  
+   padding: 10px;  
+   color: black;  
+   text-decoration: none;  
+}  
+
+.nav-menu a img{
+    width: 25px;
+    margin-right: 15px;
+}
+  
+.nav-menu a:hover {  
+   background-color: #155db3;  
+}  
         html, body {
     margin: 0;
     padding: 0;
@@ -639,6 +681,20 @@ nav {
             <div class="nav-user-icon">
                 <img src="{{ url_for('static', filename='images/' + user_profile_pic) }}" alt="Profile Picture" width="50" height="50">
             </div>   
+            <button class="menu-toggle" onclick="toggleMenu()">  
+                <span></span>  
+                <span></span>  
+                <span></span>  
+              </button>  
+              <div class="nav-menu" id="nav-menu">  
+                <!-- additional icons here -->  
+                <a href="{{ url_for('public_feed') }}"><img src="{{ url_for('static', filename='images/' + homeicon) }}">Home</a>  
+                <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/' + profileicon) }}">Profile</a>  
+                <a href="{{ url_for('helpers_section') }}"><img src="{{ url_for('static', filename='images/' + helpersicon) }}">Helpers</a>  
+                <a href="{{ url_for('scholarshipsearch') }}"><img src="{{ url_for('static', filename='images/' + scholarshipicon) }}">Scholarship Search</a>  
+                <a href="{{ url_for('ai_search') }}"><img src="{{ url_for('static', filename='images/' + ai) }}">AI Search</a>  
+                <a href="{{ url_for('courses') }}"><img src="{{ url_for('static', filename='images/' + mycourses) }}">Courses</a>  
+              </div>  
         </div>      
         
 
