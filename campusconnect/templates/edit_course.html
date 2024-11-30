@@ -3,167 +3,7 @@
 <head>
     <title>Edit Courses</title>
     <style>
-         body {
-            font-family: 'Helvetica Neue', Arial, sans-serif;
-            background-color: #efefef;
-            margin: 0;
-            padding: 0;
-        }
         
-        nav{
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            background : #1876f2;
-            padding: 5px 5%;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-        }
-        .logo{
-            color: #efefef;
-             display: flex;
-            align-items: center;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 1.5rem;
-
-        }
-        .nav-left, .nav-right{
-            display: flex;
-            align-items: center;
-        }
-        .nav-left ul li{
-            list-style: none;
-            display: inline-block;
-        }
-        .nav-left ul li img{
-            width: 28px;
-            margin: 0 15px;
-        }
-        .nav-user-login img{
-            width: 40px;
-            border-radius: 50%;
-            cursor:pointer;
-        }
-        .nav-user-icon{
-            margin-left: 30px;
-            width: 10%;
-            height: 10%
-
-        }
-        .search-box{
-            background: #efefef;
-            width: 80%;
-            border-radius: 20px;
-            display: flex;
-            align-items: center;
-            padding: 0 15px;
-        }
-        .search-box img{
-            width: 18px;
-        }
-        .search-box input{
-            width: 100%;
-            background: transparent;
-            padding: 10px;
-            outline: none;
-            border: 0;
-        }
-        .online{
-            position: relative;
-
-        }
-        .online::after{
-            content: '';
-            width: 7px;
-            height: 7px;
-            border: 2px solid #fff;
-            border-radius: 50%;
-            background-color: #41db51;
-            position: absolute;
-            top: 0;
-            right: 0;
-        }
-        .container{
-            display: flex;
-            justify-content: space-between;
-            padding: 13px 5%;
-
-        }
-        .left-sidebar{
-            flex-basis: 10%;
-            position: sticky;
-            top: 70px;
-            align-self: flex-start;
-        }
-        .right-sidebar{
-            flex-basis: 10%;
-            position: sticky;
-            top: 70px;
-            align-self: flex-start;
-
-        }
-        .main-content{
-            flex-basis: 40%;
-            height : 40%;
-            margin-right : 5%;
-
-        }
-        .imp-links a{
-            text-decoration: none;
-            display: flex;
-            align-items: center;
-            margin-bottom: 30px;
-            color: #626262;
-            width: fit-content;
-        }
-        .imp-links a img{
-            width: 25px;
-            margin-right: 15px;
-        }
-        h3{
-            margin: 10px;
-            color: #cbdffa;
-            
-        }
-
-        .write-post-container{
-            width: 100%;
-            background : #fff;
-            border-radius : 6px;
-            padding : 20px;
-            color: #626262;
-        }
-        .user-profile{
-            display: flex; 
-            align-items: center;
-        }
-        .user-profile img{
-            width: 45px;
-            border-radius : 50%;
-            margin-right: 10px;
-        }
-        .user-profile p{
-            margin-bottom : -5px;
-
-        }
-        .user-profile small{
-            font-size: 12px;
-
-        }
-        .post-input-container{
-            padding-left : 55px;
-            padding-top : 20px;
-        }
-        .post-input-container textarea{
-            width : 100%;
-            border : 0;
-            outline : 0;
-            border-bottom : 1px solid #ccc;
-            background: transparent;
-            resize: none;
-        }
         .add-post-links{
             display : flex;
             margin-top: 10px;
@@ -356,8 +196,8 @@
             <div class="logo">UniRec</div>
             <ul>
                 <li><a href="{{ url_for('notifications') }}"><img src="{{ url_for('static', filename='images/' + notification) }}"></a></li>
-                 <li><a href="{{ url_for('chat') }}"><img src="{{ url_for('static', filename='images/' + chat) }}"></a></li>
-                <li><a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + reels) }}"></a></li>
+                 <li><a href="{{ url_for('chat') }}"><img src="{{ url_for('static', filename='images/' + mychat) }}"></a></li>
+                <li><a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + myreels) }}"></a></li>
             
             </ul>
         </div>
@@ -371,6 +211,20 @@
             <div class="nav-user-icon online">
                 <img src="{{ url_for('static', filename='images/' + user_profile_pic) }}" alt="Profile Picture" width="50" height="50">
             </div>   
+            <button class="menu-toggle" onclick="toggleMenu()">  
+                <span></span>  
+                <span></span>  
+                <span></span>  
+              </button>  
+              <div class="nav-menu" id="nav-menu">  
+                <!-- additional icons here -->  
+                <a href="{{ url_for('public_feed') }}"><img src="{{ url_for('static', filename='images/' + homeicon) }}">Home</a>  
+                <a href="{{ url_for('profile') }}"><img src="{{ url_for('static', filename='images/' + profileicon) }}">Profile</a>  
+                <a href="{{ url_for('helpers_section') }}"><img src="{{ url_for('static', filename='images/' + helpersicon) }}">Helpers</a>  
+                <a href="{{ url_for('scholarshipsearch') }}"><img src="{{ url_for('static', filename='images/' + scholarshipicon) }}">Scholarship Search</a>  
+                <a href="{{ url_for('ai_search') }}"><img src="{{ url_for('static', filename='images/' + ai) }}">AI Search</a>  
+                <a href="{{ url_for('courses') }}"><img src="{{ url_for('static', filename='images/' + mycourses) }}">Courses</a>  
+              </div>
         </div>      
         
 
@@ -382,12 +236,24 @@
 
             <div class="left-sidebar">
                 <div class="imp-links">
-                    <a href="{{ url_for('friend_list') }}"><img src="{{ url_for('static', filename='images/' + friends) }}">Friends</a>
+                    <a href="{{ url_for('friend_list') }}"><img src="{{ url_for('static', filename='images/' + myfriends) }}">Friends</a>
                     <a href="{{ url_for('chat') }}"><img src="{{ url_for('static', filename='images/' + inbox) }}">Chat</a>
                     <a href="{{ url_for('notifications') }}"><img src="{{ url_for('static', filename='images/' + notificationbell) }}">Notifications</a>
                     <a href="{{ url_for('servers') }}"><img src="{{ url_for('static', filename='images/' + group) }}">Servers</a>
                     <a href="{{ url_for('reels') }}"><img src="{{ url_for('static', filename='images/' + video) }}">Reels</a>
                     <a href="{{ url_for('webinar') }}"><img src="{{ url_for('static', filename='images/' + webinar) }}">Webinar</a>
+                    <a href="{{ url_for('essays') }}">
+                        <img src="{{ url_for('static', filename='images/essays.png') }}" alt="Essays Icon" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;">
+                        Essays
+                    </a>
+                    <a href="{{ url_for('mentors') }}">
+                        <img src="{{ url_for('static', filename='images/mentor.jpg') }}" alt="Mentors Icon" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;">
+                        Mentors
+                    </a>  
+                    <a href="{{ url_for('challenges') }}">
+                        <img src="{{ url_for('static', filename='images/mentor.jpg') }}" alt="Challenges Icon" style="width:20px; height:20px; vertical-align:middle; margin-right:5px;">
+                        Challenges
+                    </a>
 
                 </div>
 
@@ -504,7 +370,7 @@
                 <a href="{{ url_for('helpers_section') }}"><img src="{{ url_for('static', filename='images/' + helpersicon) }}">Helpers</a>
                 <a href="{{ url_for('scholarshipsearch') }}"><img src="{{ url_for('static', filename='images/' + scholarshipicon) }}">Scholarship Search</a>
                 <a href="{{ url_for('ai_search') }}"><img src="{{ url_for('static', filename='images/' + ai) }}">AI Search</a>
-                <a href="{{ url_for('webinar') }}"><img src="{{ url_for('static', filename='images/' + courses) }}">Courses</a>
+                <a href="{{ url_for('courses') }}"><img src="{{ url_for('static', filename='images/' + mycourses) }}">Courses</a>
             </div>
         </div>
 
@@ -588,6 +454,10 @@
                 container.innerHTML += `<input type="hidden" name="delete_instructor_id[]" value="${instructorId}">`;
                 document.getElementById("instructor-" + instructorId).remove();
             }
+            function toggleMenu() {  
+   var menu = document.getElementById('nav-menu');  
+   menu.style.display = menu.style.display === 'block' ? 'none' : 'block';  
+}
         </script>
         
         </body>
